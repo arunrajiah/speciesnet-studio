@@ -121,6 +121,6 @@ async def job_progress_ws(websocket: WebSocket, job_id: str) -> None:
                 break
             await asyncio.sleep(1)
     except Exception:
-        pass
+        logger.exception("WebSocket error for job %s", job_id)
     finally:
         await websocket.close()
