@@ -61,7 +61,7 @@ def _parse_exif(img: Image.Image) -> dict[str, Any]:
         exif = img.getexif()
         if not exif:
             return data
-        exif_tags: dict[str, Any] = {TAGS.get(k, k): v for k, v in exif.items()}
+        exif_tags: dict[str | int, Any] = {TAGS.get(k, k): v for k, v in exif.items()}
 
         # Datetime
         for tag in ("DateTimeOriginal", "DateTime"):
@@ -77,7 +77,7 @@ def _parse_exif(img: Image.Image) -> dict[str, Any]:
         # GPS — use the public get_ifd() for the GPS sub-IFD
         gps_ifd = exif.get_ifd(_GPS_IFD_TAG)
         if gps_ifd:
-            gps: dict[str, Any] = {GPSTAGS.get(k, k): v for k, v in gps_ifd.items()}
+            gps: dict[str | int, Any] = {GPSTAGS.get(k, k): v for k, v in gps_ifd.items()}
             lat = _dms_to_decimal(gps.get("GPSLatitude"), gps.get("GPSLatitudeRef"))
             lon = _dms_to_decimal(gps.get("GPSLongitude"), gps.get("GPSLongitudeRef"))
             if lat is not None:
