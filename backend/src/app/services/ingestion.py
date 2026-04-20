@@ -49,7 +49,7 @@ def _parse_exif(img: Image.Image) -> dict[str, Any]:
                     ).replace(tzinfo=UTC)
                     break
                 except ValueError:
-                    pass
+                    logger.debug("Could not parse EXIF datetime tag %s: %r", tag, exif[tag])
 
         # GPS
         gps_info = exif.get("GPSInfo")
