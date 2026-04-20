@@ -21,7 +21,8 @@ def _to_read(session: Session, collection_id: int) -> CollectionRead:
     col = get_collection(session, collection_id)
     if col is None:
         raise HTTPException(status_code=404, detail="Collection not found")
-    assert col.id is not None
+    if col.id is None:
+        raise HTTPException(status_code=500, detail="Collection has no ID after creation")
     return CollectionRead(
         id=col.id,
         name=col.name,
@@ -55,7 +56,8 @@ def create_collection_route(
 ) -> CollectionRead:
     """Create a collection and kick off image ingestion in the background."""
     col = create_collection(session, body.name, body.source_folder)
-    assert col.id is not None
+    if col.id is None:
+        raise HTTPException(status_code=500, detail="Collection was not assigned an ID")
     background_tasks.add_task(walk_folder, col.id, body.source_folder, DATA_THUMBS_DIR)
     return CollectionRead(
         id=col.id,
