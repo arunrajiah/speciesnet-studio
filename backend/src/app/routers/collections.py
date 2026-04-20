@@ -42,7 +42,7 @@ def list_collections_route(session: Session = Depends(get_session)) -> list[Coll
             name=c.name,
             source_folder=c.source_folder,
             created_at=c.created_at,
-            item_count=count_items(session, c.id),  # type: ignore[arg-type]
+            item_count=count_items(session, c.id) if c.id is not None else 0,
         )
         for c in cols
     ]
