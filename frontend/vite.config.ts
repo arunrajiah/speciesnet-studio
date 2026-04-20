@@ -16,7 +16,18 @@ export default defineConfig({
       '/api': {
         target: process.env.VITE_API_TARGET ?? 'http://localhost:8000',
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/api/, ''),
+      },
+      '/ws': {
+        target: (process.env.VITE_API_TARGET ?? 'http://localhost:8000').replace(/^http/, 'ws'),
+        ws: true,
+      },
+      '/thumbs': {
+        target: process.env.VITE_API_TARGET ?? 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/images': {
+        target: process.env.VITE_API_TARGET ?? 'http://localhost:8000',
+        changeOrigin: true,
       },
     },
   },
