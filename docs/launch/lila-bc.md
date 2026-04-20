@@ -13,9 +13,17 @@ Hi LILA BC community,
 
 I'm Arun Rajiah. I recently shipped an open-source tool called SpeciesNet Studio (https://github.com/arunrajiah/speciesnet-studio) — a self-hosted web UI for reviewing Google SpeciesNet camera trap predictions.
 
-One of the things I wanted to get right from the start is the onboarding experience. Asking researchers to load their own data just to try a new tool is a real barrier, so Studio has a "Try with sample data" button that downloads a small set of Creative Commons wildlife images for the demo. I'm using images from LILA BC — specifically:
+One of the things I wanted to get right from the start is the onboarding experience. Asking researchers to load their own data just to try a new tool is a real barrier, so Studio has a "Try with sample data" button that downloads a small set of Creative Commons wildlife images for the demo. The five sample images are sourced from **Wikimedia Commons** (not LILA BC — I wanted to note that distinction in case it matters for attribution):
 
-**[TODO: fill in the exact dataset(s) and image URLs you ended up using in scripts/download_sample.py]**
+| Filename | Subject | Wikimedia URL | License |
+|---|---|---|---|
+| `lion.jpg` | African lion (Namibia) | https://commons.wikimedia.org/wiki/File:Lion_waiting_in_Namibia.jpg | CC BY-SA 3.0 |
+| `elephant.jpg` | African bush elephant | https://commons.wikimedia.org/wiki/File:African_Bush_Elephant.jpg | CC BY-SA 3.0 |
+| `zebra.jpg` | Plains zebra | https://commons.wikimedia.org/wiki/File:Plains_Zebra_Equus_quagga.jpg | CC BY-SA 3.0 |
+| `giraffe.jpg` | Giraffe (Mikumi NP) | https://commons.wikimedia.org/wiki/File:Giraffe_Mikumi_National_Park.jpg | CC BY-SA 3.0 |
+| `cheetah.jpg` | Cheetah | https://commons.wikimedia.org/wiki/File:TheCheethcat.jpg | CC BY-SA 3.0 |
+
+The download URLs are the 320 px (or 240 px for the giraffe) resized thumbnails served directly by Wikimedia.
 
 I want to make sure I'm attributing these correctly. A few questions:
 
