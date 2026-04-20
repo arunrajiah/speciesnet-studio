@@ -182,16 +182,29 @@ def submit_review(
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    status_val = str(body.get("status", "confirmed"))
-    override_label = body.get("override_label")
-    reviewer_note = body.get("reviewer_note")
+    raw_status = body.get("status", "confirmed")
+    if not isinstance(raw_status, str):
+        raise HTTPException(status_code=422, detail="status must be a string")
+    status_val = raw_status
+
+    raw_label = body.get("override_label")
+    override_label = str(raw_label) if isinstance(raw_label, str) and raw_label else None
+
+    raw_note = body.get("reviewer_note")
+    reviewer_note = str(raw_note) if isinstance(raw_note, str) and raw_note else None
+
+    try:
+        review_status = ReviewStatus(status_val)
+    except ValueError:
+        valid = ", ".join(s.value for s in ReviewStatus)
+        raise HTTPException(status_code=422, detail=f"status must be one of: {valid}")
 
     record = upsert_review(
         session,
         item_id,
-        status=ReviewStatus(status_val),
-        override_label=str(override_label) if override_label else None,
-        reviewer_note=str(reviewer_note) if reviewer_note else None,
+        status=review_status,
+        override_label=override_label,
+        reviewer_note=reviewer_note,
     )
     return {
         "id": record.id,
