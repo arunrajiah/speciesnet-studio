@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, col, select
 
@@ -82,7 +84,7 @@ def list_items(
             {
                 "id": item.id,
                 "filename": item.filename,
-                "thumbnail_url": f"/thumbs/{item.thumbnail_path.split('/')[-1]}"
+                "thumbnail_url": f"/thumbs/{os.path.basename(item.thumbnail_path)}"
                 if item.thumbnail_path
                 else None,
                 "top_label": top_label,
@@ -120,7 +122,7 @@ def get_item(item_id: int, session: Session = Depends(get_session)) -> dict[str,
         "id": item.id,
         "filename": item.filename,
         "full_image_url": f"/images/{item.filename}",
-        "thumbnail_url": f"/thumbs/{item.thumbnail_path.split('/')[-1]}"
+        "thumbnail_url": f"/thumbs/{os.path.basename(item.thumbnail_path)}"
         if item.thumbnail_path
         else None,
         "captured_at": item.captured_at.isoformat() if item.captured_at else None,
