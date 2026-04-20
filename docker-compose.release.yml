@@ -1,0 +1,40 @@
+# SpeciesNet Studio — release compose file
+#
+# This file is for end users who want to run SpeciesNet Studio without
+# building from source. Pull and start with:
+#
+#   curl -O https://raw.githubusercontent.com/arunrajiah/speciesnet-studio/main/docker-compose.release.yml
+#   docker compose -f docker-compose.release.yml up
+#
+# Images are published to ghcr.io on every tagged release.
+# For a pinned version, download docker-compose.release.pinned.yml from
+# the GitHub release assets and use that file instead.
+
+services:
+  backend:
+    image: ghcr.io/arunrajiah/speciesnet-studio-backend:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+    environment:
+      - PYTHONPATH=/app/src
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  frontend:
+    image: ghcr.io/arunrajiah/speciesnet-studio-frontend:latest
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_TARGET=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped

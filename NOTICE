@@ -1,0 +1,21 @@
+SpeciesNet Studio
+Copyright 2024 Arun Rajiah
+
+This product includes software developed as part of the SpeciesNet Studio project.
+
+---
+
+This product uses SpeciesNet (https://github.com/google/cameratrapai), which is
+Copyright 2024 Google LLC, licensed under the Apache License, Version 2.0.
+SpeciesNet is an AI model for wildlife species classification in camera trap images
+developed by Google and the Wildlife Insights team.
+
+---
+
+This product uses Wildlife Insights JSON schema definitions from Wildlife Insights
+(https://wildlifeinsights.org), developed by a consortium of conservation organizations.
+
+---
+
+Third-party open source components used in this project retain their original
+licenses. See individual package metadata for details.
