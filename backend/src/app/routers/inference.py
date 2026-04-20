@@ -10,10 +10,12 @@ from sqlmodel import Session
 from app.adapters.speciesnet_adapter import SpeciesNetAdapter
 from app.adapters.subprocess_adapter import SubprocessAdapter
 from app.config import load_config
-from app.db import get_session
+from app.db import engine, get_session
 from app.repositories.collections import get_collection
 from app.services.jobs import create_job, get_job, update_job
 from app.services.results_parser import parse_predictions_json, persist_predictions
+
+PREDICTIONS_DIR = os.environ.get("PREDICTIONS_DIR", "./data/predictions")
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +25,8 @@ router = APIRouter(tags=["inference"])
 def _run_inference_task(job_id: str, collection_id: int, folder: str) -> None:
     """Background task: run adapter, parse results, persist predictions."""
     update_job(job_id, status="running", stage="starting")
-    output_dir = "./data/predictions"
-    os.makedirs(output_dir, exist_ok=True)
-    output_json = os.path.join(output_dir, f"job_{job_id}.json")
+    os.makedirs(PREDICTIONS_DIR, exist_ok=True)
+    output_json = os.path.join(PREDICTIONS_DIR, f"job_{job_id}.json")
 
     config = load_config()
     if config.get("adapter") == "speciesnet":
@@ -58,11 +59,7 @@ def _run_inference_task(job_id: str, collection_id: int, folder: str) -> None:
         parsed = parse_predictions_json(output_json)
 
         update_job(job_id, stage="persisting")
-        from sqlmodel import Session as _Session
-
-        from app.db import engine
-
-        with _Session(engine) as session:
+        with Session(engine) as session:
             persist_predictions(session, collection_id, parsed)
 
         update_job(
