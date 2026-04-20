@@ -42,6 +42,5 @@ Work through these on github.com and the listed platforms. None of this is code.
 ## Housekeeping
 
 - [ ] Verify `.github/FUNDING.yml` exists: `github: arunrajiah`
-- [ ] Verify `.github/SPONSOR_TIERS.md` is committed and correct
-- [ ] Verify `docs/supporters.md` is committed
+- [ ] Verify sponsors link points to https://github.com/sponsors/arunrajiah
 - [ ] Verify `docs/media/` contains at least hero.png before publishing the README

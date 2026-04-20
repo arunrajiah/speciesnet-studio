@@ -124,9 +124,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Issues labelled [`good first issue`](htt
 
 SpeciesNet Studio is built and maintained by [Arun Rajiah](https://github.com/arunrajiah) in his own time. If your lab, program, or foundation benefits from the tool, please consider sponsoring continued development.
 
-**[Become a sponsor →](https://github.com/sponsors/arunrajiah)**  
-See [`.github/SPONSOR_TIERS.md`](.github/SPONSOR_TIERS.md) for tier details and what your support funds.  
-See [docs/supporters.md](docs/supporters.md) for current supporters.
+**[Become a sponsor →](https://github.com/sponsors/arunrajiah)**
 
 ---
 
