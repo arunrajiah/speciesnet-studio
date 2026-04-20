@@ -9,11 +9,7 @@ _IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".tif", ".tiff"}
 
 
 def _count_images(folder: str) -> int:
-    return sum(
-        1
-        for p in Path(folder).rglob("*")
-        if p.suffix.lower() in _IMAGE_EXTS
-    )
+    return sum(1 for p in Path(folder).rglob("*") if p.suffix.lower() in _IMAGE_EXTS)
 
 
 class SpeciesNetAdapter:
@@ -47,8 +43,7 @@ class SpeciesNetAdapter:
             from speciesnet.utils import prepare_instances_dict
         except ImportError as exc:
             raise RuntimeError(
-                "speciesnet is not installed. "
-                "Install it with: uv pip install 'speciesnet>=5.0.0'"
+                "speciesnet is not installed. Install it with: uv pip install 'speciesnet>=5.0.0'"
             ) from exc
 
         model_name = self._model_name or os.environ.get("SPECIESNET_MODEL") or DEFAULT_MODEL

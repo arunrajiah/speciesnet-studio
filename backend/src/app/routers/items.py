@@ -55,9 +55,7 @@ def list_items(
         ).all()
     )
     all_reviews = list(
-        session.exec(
-            select(ReviewRecord).where(col(ReviewRecord.item_id).in_(item_ids))
-        ).all()
+        session.exec(select(ReviewRecord).where(col(ReviewRecord.item_id).in_(item_ids))).all()
     )
 
     top_pred_by_item: dict[int, Prediction] = {}
@@ -121,9 +119,7 @@ def get_item(item_id: int, session: Session = Depends(get_session)) -> dict[str,
         ).all()
     )
 
-    review = session.exec(
-        select(ReviewRecord).where(ReviewRecord.item_id == item_id)
-    ).first()
+    review = session.exec(select(ReviewRecord).where(ReviewRecord.item_id == item_id)).first()
 
     return {
         "id": item.id,
@@ -160,9 +156,7 @@ def get_item(item_id: int, session: Session = Depends(get_session)) -> dict[str,
 
 
 @router.get("/collections/{collection_id}/labels")
-def list_labels(
-    collection_id: int, session: Session = Depends(get_session)
-) -> list[str]:
+def list_labels(collection_id: int, session: Session = Depends(get_session)) -> list[str]:
     """Return distinct prediction labels for a collection."""
     labels = list(
         session.exec(

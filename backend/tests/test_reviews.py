@@ -30,9 +30,7 @@ def test_upsert_creates_review(session: Session) -> None:
 def test_upsert_updates_existing_review(session: Session) -> None:
     item_id = _make_item(session)
     upsert_review(session, item_id, ReviewStatus.confirmed)
-    updated = upsert_review(
-        session, item_id, ReviewStatus.overridden, override_label="fox"
-    )
+    updated = upsert_review(session, item_id, ReviewStatus.overridden, override_label="fox")
     rows = list(session.exec(select(ReviewRecord).where(ReviewRecord.item_id == item_id)).all())
     assert len(rows) == 1
     assert updated.status == ReviewStatus.overridden

@@ -13,9 +13,7 @@ def upsert_review(
     reviewer_note: str | None = None,
 ) -> ReviewRecord:
     """Insert or update the review record for *item_id*."""
-    existing = session.exec(
-        select(ReviewRecord).where(ReviewRecord.item_id == item_id)
-    ).first()
+    existing = session.exec(select(ReviewRecord).where(ReviewRecord.item_id == item_id)).first()
 
     if existing:
         existing.status = status
@@ -41,6 +39,4 @@ def upsert_review(
 
 def get_review(session: Session, item_id: int) -> ReviewRecord | None:
     """Return the review record for *item_id*, or None."""
-    return session.exec(
-        select(ReviewRecord).where(ReviewRecord.item_id == item_id)
-    ).first()
+    return session.exec(select(ReviewRecord).where(ReviewRecord.item_id == item_id)).first()

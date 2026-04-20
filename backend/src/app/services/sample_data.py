@@ -41,9 +41,7 @@ def ensure_sample_images() -> str:
         if out.exists():
             continue
         try:
-            req = urllib.request.Request(
-                img["url"], headers={"User-Agent": "SpeciesNetStudio/0.1"}
-            )
+            req = urllib.request.Request(img["url"], headers={"User-Agent": "SpeciesNetStudio/0.1"})
             with urllib.request.urlopen(req, timeout=15) as resp, open(out, "wb") as f:
                 f.write(resp.read())
             logger.info("Downloaded sample image: %s", img["filename"])
