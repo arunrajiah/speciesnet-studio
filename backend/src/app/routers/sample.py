@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlmodel import Session, select
 
 from app.db import get_session
@@ -31,7 +31,8 @@ def load_sample_data(
 
     folder = ensure_sample_images()
     col = create_collection(session, SAMPLE_COLLECTION_NAME, folder)
-    assert col.id is not None
+    if col.id is None:
+        raise HTTPException(status_code=500, detail="Sample collection was not assigned an ID")
     background_tasks.add_task(walk_folder, col.id, folder, THUMBS_DIR)
 
     return {"collection_id": col.id, "created": True}
