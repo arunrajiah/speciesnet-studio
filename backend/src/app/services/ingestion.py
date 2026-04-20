@@ -62,7 +62,7 @@ def _parse_exif(img: Image.Image) -> dict[str, Any]:
             if lon is not None:
                 data["longitude"] = lon
     except Exception:
-        pass
+        logger.debug("EXIF extraction failed", exc_info=True)
     return data
 
 
