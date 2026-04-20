@@ -65,7 +65,11 @@ def parse_predictions_json(path: str) -> list[ParsedPrediction]:
                             )
                         bbox = clamped
                     except (TypeError, ValueError):
-                        logger.warning("Invalid bbox values in prediction for %s: %s", filepath, raw_bbox)
+                        logger.warning(
+                            "Invalid bbox values in prediction for %s: %s",
+                            filepath,
+                            raw_bbox,
+                        )
 
         results.append(
             ParsedPrediction(

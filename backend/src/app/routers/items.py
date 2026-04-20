@@ -204,7 +204,10 @@ def submit_review(
         review_status = ReviewStatus(status_val)
     except ValueError:
         valid = ", ".join(s.value for s in ReviewStatus)
-        raise HTTPException(status_code=422, detail=f"status must be one of: {valid}")
+        raise HTTPException(
+            status_code=422,
+            detail=f"status must be one of: {valid}",
+        ) from None
 
     record = upsert_review(
         session,

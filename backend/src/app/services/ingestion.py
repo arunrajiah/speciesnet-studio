@@ -26,10 +26,17 @@ def get_progress(collection_id: int) -> dict[str, Any]:
         return {"processed": row.processed, "total": row.total, "stage": row.stage}
 
 
-def _set_progress(session: Session, collection_id: int, processed: int, total: int, stage: str) -> None:
+def _set_progress(
+    session: Session, collection_id: int, processed: int, total: int, stage: str
+) -> None:
     row = session.get(IngestionProgress, collection_id)
     if row is None:
-        row = IngestionProgress(collection_id=collection_id, processed=processed, total=total, stage=stage)
+        row = IngestionProgress(
+            collection_id=collection_id,
+            processed=processed,
+            total=total,
+            stage=stage,
+        )
         session.add(row)
     else:
         row.processed = processed
