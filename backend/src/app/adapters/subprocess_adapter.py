@@ -36,7 +36,8 @@ class SubprocessAdapter:
             stderr=subprocess.STDOUT,
             text=True,
         ) as proc:
-            assert proc.stdout is not None
+            if proc.stdout is None:
+                raise RuntimeError("subprocess stdout is None — PIPE not opened")
             for line in proc.stdout:
                 line = line.rstrip()
                 if not line:
