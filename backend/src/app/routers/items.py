@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from app.db import get_session
 from app.models.item import Item
@@ -130,12 +130,15 @@ def list_labels(
     collection_id: int, session: Session = Depends(get_session)
 ) -> list[str]:
     """Return distinct prediction labels for a collection."""
-    items = list(session.exec(select(Item).where(Item.collection_id == collection_id)).all())
-    item_ids = [i.id for i in items if i.id is not None]
-    if not item_ids:
-        return []
-    preds = list(session.exec(select(Prediction).where(Prediction.item_id.in_(item_ids))).all())  # type: ignore[attr-defined]
-    return sorted({p.label for p in preds})
+    labels = list(
+        session.exec(
+            select(col(Prediction.label))
+            .join(Item, col(Prediction.item_id) == col(Item.id))
+            .where(col(Item.collection_id) == collection_id)
+            .distinct()
+        ).all()
+    )
+    return sorted(set(labels))
 
 
 # ── review ────────────────────────────────────────────────────────────────────
