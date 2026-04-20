@@ -55,7 +55,17 @@ def parse_predictions_json(path: str) -> list[ParsedPrediction]:
             if isinstance(first, dict) and "bbox" in first:
                 raw_bbox = first["bbox"]
                 if isinstance(raw_bbox, list) and len(raw_bbox) == 4:
-                    bbox = [float(v) for v in raw_bbox]
+                    try:
+                        parsed_bbox = [float(v) for v in raw_bbox]
+                        # Clamp all coordinates to [0, 1] to guard against model output drift
+                        clamped = [max(0.0, min(1.0, v)) for v in parsed_bbox]
+                        if clamped != parsed_bbox:
+                            logger.debug(
+                                "Clamped bbox %s to %s for %s", parsed_bbox, clamped, filepath
+                            )
+                        bbox = clamped
+                    except (TypeError, ValueError):
+                        logger.warning("Invalid bbox values in prediction for %s: %s", filepath, raw_bbox)
 
         results.append(
             ParsedPrediction(
