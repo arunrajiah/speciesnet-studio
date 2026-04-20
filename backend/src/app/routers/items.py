@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, col, select
@@ -10,6 +11,27 @@ from app.models.review import ReviewRecord, ReviewStatus
 from app.repositories.reviews import upsert_review
 
 router = APIRouter(prefix="/api", tags=["items"])
+
+_IMAGES_DIR = Path(os.environ.get("IMAGES_DIR", "./data/images")).resolve()
+_THUMBS_DIR = Path(os.environ.get("THUMBS_DIR", "./data/thumbs")).resolve()
+
+
+def _image_url(path: str) -> str:
+    """Return a URL for a full-res image, preserving subdirectory structure."""
+    try:
+        rel = Path(path).resolve().relative_to(_IMAGES_DIR)
+        return f"/images/{rel.as_posix()}"
+    except ValueError:
+        return f"/images/{os.path.basename(path)}"
+
+
+def _thumb_url(path: str) -> str:
+    """Return a URL for a thumbnail image."""
+    try:
+        rel = Path(path).resolve().relative_to(_THUMBS_DIR)
+        return f"/thumbs/{rel.as_posix()}"
+    except ValueError:
+        return f"/thumbs/{os.path.basename(path)}"
 
 
 # ── list items ────────────────────────────────────────────────────────────────
@@ -89,9 +111,7 @@ def list_items(
             {
                 "id": item.id,
                 "filename": item.filename,
-                "thumbnail_url": f"/thumbs/{os.path.basename(item.thumbnail_path)}"
-                if item.thumbnail_path
-                else None,
+                "thumbnail_url": _thumb_url(item.thumbnail_path) if item.thumbnail_path else None,
                 "top_label": top_label,
                 "top_confidence": top_confidence,
                 "review_status": review_status,
@@ -124,10 +144,8 @@ def get_item(item_id: int, session: Session = Depends(get_session)) -> dict[str,
     return {
         "id": item.id,
         "filename": item.filename,
-        "full_image_url": f"/images/{item.filename}",
-        "thumbnail_url": f"/thumbs/{os.path.basename(item.thumbnail_path)}"
-        if item.thumbnail_path
-        else None,
+        "full_image_url": _image_url(item.path),
+        "thumbnail_url": _thumb_url(item.thumbnail_path) if item.thumbnail_path else None,
         "captured_at": item.captured_at.isoformat() if item.captured_at else None,
         "latitude": item.latitude,
         "longitude": item.longitude,
