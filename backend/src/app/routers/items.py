@@ -24,6 +24,13 @@ def list_items(
     session: Session = Depends(get_session),
 ) -> list[dict[str, object]]:
     """Return items for a collection with optional filters."""
+    if min_conf is not None and not (0.0 <= min_conf <= 1.0):
+        raise HTTPException(status_code=422, detail="min_conf must be between 0 and 1")
+    if max_conf is not None and not (0.0 <= max_conf <= 1.0):
+        raise HTTPException(status_code=422, detail="max_conf must be between 0 and 1")
+    if min_conf is not None and max_conf is not None and min_conf > max_conf:
+        raise HTTPException(status_code=422, detail="min_conf must not exceed max_conf")
+
     items = list(session.exec(select(Item).where(Item.collection_id == collection_id)).all())
     if not items:
         return []
