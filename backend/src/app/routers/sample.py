@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlmodel import Session, select
 
@@ -9,8 +11,8 @@ from app.services.sample_data import ensure_sample_images
 
 router = APIRouter(prefix="/api", tags=["sample"])
 
-SAMPLE_COLLECTION_NAME = "Sample Data"
-THUMBS_DIR = "./data/thumbs"
+SAMPLE_COLLECTION_NAME = os.environ.get("SAMPLE_COLLECTION_NAME", "Sample Data")
+THUMBS_DIR = os.environ.get("THUMBS_DIR", "./data/thumbs")
 
 
 @router.post("/sample")
