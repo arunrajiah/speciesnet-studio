@@ -1,0 +1,3 @@
+# Every file in the repo — @arunrajiah must approve all PRs before merge.
+# This file is enforced by branch protection (require code-owner review).
+* @arunrajiah

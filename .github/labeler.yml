@@ -1,0 +1,34 @@
+# Used by the actions/labeler workflow (.github/workflows/pr.yml)
+# Labels are applied automatically when a PR touches matching paths.
+
+"area: backend":
+  - changed-files:
+    - any-glob-to-any-file:
+      - "backend/**"
+
+"area: frontend":
+  - changed-files:
+    - any-glob-to-any-file:
+      - "frontend/**"
+
+"area: docs":
+  - changed-files:
+    - any-glob-to-any-file:
+      - "docs/**"
+      - "*.md"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+
+"area: ci":
+  - changed-files:
+    - any-glob-to-any-file:
+      - ".github/workflows/**"
+      - ".github/CODEOWNERS"
+      - ".github/labeler.yml"
+
+"area: docker":
+  - changed-files:
+    - any-glob-to-any-file:
+      - "Dockerfile"
+      - "**/Dockerfile"
+      - "docker-compose*.yml"

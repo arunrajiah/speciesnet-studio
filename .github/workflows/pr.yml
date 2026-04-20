@@ -1,0 +1,146 @@
+name: PR automation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  # Trigger the "checks passed" comment job when CI jobs complete
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+jobs:
+  # ── Label by area ────────────────────────────────────────────────────────────
+  label:
+    name: Label by area
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/labeler@v5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: .github/labeler.yml
+          sync-labels: false
+
+  # ── Size label ───────────────────────────────────────────────────────────────
+  size-label:
+    name: Label by size
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Add size label
+        uses: pascalgn/size-label-action@v0.5.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          sizes: >
+            {
+              "XS":   10,
+              "S":    50,
+              "M":   250,
+              "L":   800,
+              "XL": 2000
+            }
+
+  # ── Auto-request maintainer review ───────────────────────────────────────────
+  request-review:
+    name: Request maintainer review
+    runs-on: ubuntu-latest
+    # Only run on PRs opened/re-opened by someone other than the maintainer
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.action == 'opened' &&
+      github.event.pull_request.user.login != 'arunrajiah'
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Request review from @arunrajiah
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr edit "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" \
+            --add-reviewer arunrajiah || true
+
+  # ── Welcome first-time contributors ─────────────────────────────────────────
+  welcome:
+    name: Welcome first-time contributor
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.action == 'opened'
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Check if first-time contributor
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COUNT=$(gh pr list \
+            --repo "${{ github.repository }}" \
+            --author "${{ github.event.pull_request.user.login }}" \
+            --state all \
+            --json number \
+            --jq 'length')
+          echo "pr_count=$COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: Post welcome comment
+        if: steps.check.outputs.pr_count == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" \
+            --body "👋 Thanks for your first contribution to SpeciesNet Studio, @${{ github.event.pull_request.user.login }}!
+
+          Here's what happens next:
+          1. **CI** will run automatically — lint, type-check, and tests for both backend and frontend.
+          2. Once CI is green, **@arunrajiah** will review and either approve or leave feedback.
+          3. After approval the PR will be merged.
+
+          While you wait, please double-check the [PR checklist](.github/PULL_REQUEST_TEMPLATE.md) in the description. Feel free to ask questions in the comments."
+
+  # ── Post "all checks passed" comment ─────────────────────────────────────────
+  checks-passed:
+    name: Notify checks passed
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request'
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Find associated PR
+        id: find-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR=$(gh pr list \
+            --repo "${{ github.repository }}" \
+            --head "${{ github.event.workflow_run.head_branch }}" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+          echo "pr=$PR" >> "$GITHUB_OUTPUT"
+
+      - name: Post "checks passed" comment
+        if: steps.find-pr.outputs.pr != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment "${{ steps.find-pr.outputs.pr }}" \
+            --repo "${{ github.repository }}" \
+            --body "✅ **All automated checks passed** (lint · typecheck · tests · build).
+
+          This PR is ready for maintainer review — @arunrajiah will take a look."
