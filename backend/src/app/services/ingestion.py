@@ -8,19 +8,35 @@ from PIL.ExifTags import GPSTAGS, TAGS
 from sqlmodel import Session
 
 from app.db import engine
+from app.models.ingestion_progress import IngestionProgress
 from app.models.item import Item
 
 logger = logging.getLogger(__name__)
 
 _SUPPORTED = {".jpg", ".jpeg", ".png", ".tif", ".tiff"}
-
-# In-memory progress keyed by collection_id
-_progress: dict[int, dict[str, Any]] = {}
+_GPS_IFD_TAG = 0x8825  # EXIF tag for the GPS sub-IFD
 
 
 def get_progress(collection_id: int) -> dict[str, Any]:
-    """Return ingestion progress for a collection."""
-    return _progress.get(collection_id, {"processed": 0, "total": 0, "stage": "idle"})
+    """Return ingestion progress for a collection from the database."""
+    with Session(engine) as session:
+        row = session.get(IngestionProgress, collection_id)
+        if row is None:
+            return {"processed": 0, "total": 0, "stage": "idle"}
+        return {"processed": row.processed, "total": row.total, "stage": row.stage}
+
+
+def _set_progress(session: Session, collection_id: int, processed: int, total: int, stage: str) -> None:
+    row = session.get(IngestionProgress, collection_id)
+    if row is None:
+        row = IngestionProgress(collection_id=collection_id, processed=processed, total=total, stage=stage)
+        session.add(row)
+    else:
+        row.processed = processed
+        row.total = total
+        row.stage = stage
+        session.add(row)
+    session.commit()
 
 
 def _collect_paths(folder: str) -> list[str]:
@@ -30,9 +46,6 @@ def _collect_paths(folder: str) -> list[str]:
             if os.path.splitext(fname)[1].lower() in _SUPPORTED:
                 paths.append(os.path.join(root, fname))
     return sorted(paths)
-
-
-_GPS_IFD_TAG = 0x8825  # EXIF tag for the GPS sub-IFD
 
 
 def _parse_exif(img: Image.Image) -> dict[str, Any]:
@@ -102,9 +115,10 @@ def walk_folder(collection_id: int, folder: str, thumb_dir: str) -> None:
     """Walk a folder, extract EXIF, generate thumbnails, and persist Item rows."""
     paths = _collect_paths(folder)
     total = len(paths)
-    _progress[collection_id] = {"processed": 0, "total": total, "stage": "scanning"}
 
     with Session(engine) as session:
+        _set_progress(session, collection_id, processed=0, total=total, stage="scanning")
+
         for idx, path in enumerate(paths, 1):
             filename = os.path.basename(path)
             exif_data: dict[str, Any] = {}
@@ -131,12 +145,7 @@ def walk_folder(collection_id: int, folder: str, thumb_dir: str) -> None:
                 thumbnail_path=thumb_path,
             )
             session.add(item)
-            session.commit()
+            _set_progress(session, collection_id, processed=idx, total=total, stage="ingesting")
 
-            _progress[collection_id] = {
-                "processed": idx,
-                "total": total,
-                "stage": "ingesting",
-            }
-
-    _progress[collection_id] = {"processed": total, "total": total, "stage": "done"}
+    with Session(engine) as session:
+        _set_progress(session, collection_id, processed=total, total=total, stage="done")
