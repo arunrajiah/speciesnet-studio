@@ -61,7 +61,7 @@ def _parse_progress(line: str) -> dict[str, object] | None:
             if isinstance(data, dict):
                 return data
         except json.JSONDecodeError:
-            pass
+            logger.debug("JSON progress parse failed for line: %s", line)
 
     m = _SLASH_PROGRESS.search(line)
     if m:
