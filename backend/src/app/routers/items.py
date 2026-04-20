@@ -32,6 +32,13 @@ def list_items(
         raise HTTPException(status_code=422, detail="max_conf must be between 0 and 1")
     if min_conf is not None and max_conf is not None and min_conf > max_conf:
         raise HTTPException(status_code=422, detail="min_conf must not exceed max_conf")
+    if status is not None:
+        valid_statuses = [s.value for s in ReviewStatus]
+        if status not in valid_statuses:
+            raise HTTPException(
+                status_code=422,
+                detail=f"status must be one of: {', '.join(valid_statuses)}",
+            )
 
     items = list(session.exec(select(Item).where(Item.collection_id == collection_id)).all())
     if not items:
