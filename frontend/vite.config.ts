@@ -17,6 +17,10 @@ export default defineConfig({
         target: process.env.VITE_API_TARGET ?? 'http://localhost:8000',
         changeOrigin: true,
       },
+      '/health': {
+        target: process.env.VITE_API_TARGET ?? 'http://localhost:8000',
+        changeOrigin: true,
+      },
       '/ws': {
         target: (process.env.VITE_API_TARGET ?? 'http://localhost:8000').replace(/^http/, 'ws'),
         ws: true,

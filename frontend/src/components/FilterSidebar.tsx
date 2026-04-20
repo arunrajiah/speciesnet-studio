@@ -13,8 +13,10 @@ import {
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
 
-const STATUSES: { value: ReviewStatus | ''; label: string }[] = [
-  { value: '', label: 'All statuses' },
+const ALL_STATUSES = '__all__'
+
+const STATUSES: { value: string; label: string }[] = [
+  { value: ALL_STATUSES, label: 'All statuses' },
   { value: 'unreviewed', label: 'Unreviewed' },
   { value: 'confirmed', label: 'Confirmed' },
   { value: 'overridden', label: 'Overridden' },
@@ -107,8 +109,8 @@ export function FilterSidebar({ labels, filters, onChange }: FilterSidebarProps)
       <div className="space-y-1">
         <Label className="text-xs">Review status</Label>
         <Select
-          value={filters.status ?? ''}
-          onValueChange={(v) => onChange({ status: (v as ReviewStatus) || undefined })}
+          value={filters.status ?? ALL_STATUSES}
+          onValueChange={(v) => onChange({ status: v === ALL_STATUSES ? undefined : (v as ReviewStatus) })}
         >
           <SelectTrigger className="h-8 text-sm">
             <SelectValue />
