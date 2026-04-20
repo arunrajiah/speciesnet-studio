@@ -25,18 +25,36 @@ def list_items(
 ) -> list[dict[str, object]]:
     """Return items for a collection with optional filters."""
     items = list(session.exec(select(Item).where(Item.collection_id == collection_id)).all())
+    if not items:
+        return []
+
+    item_ids = [i.id for i in items if i.id is not None]
+
+    # Batch-load all predictions and reviews in two queries instead of 2N.
+    all_preds = list(
+        session.exec(
+            select(Prediction)
+            .where(col(Prediction.item_id).in_(item_ids))
+            .order_by(Prediction.confidence.desc())  # type: ignore[attr-defined]
+        ).all()
+    )
+    all_reviews = list(
+        session.exec(
+            select(ReviewRecord).where(col(ReviewRecord.item_id).in_(item_ids))
+        ).all()
+    )
+
+    top_pred_by_item: dict[int, Prediction] = {}
+    for pred in all_preds:
+        if pred.item_id not in top_pred_by_item:
+            top_pred_by_item[pred.item_id] = pred
+
+    review_by_item: dict[int, ReviewRecord] = {r.item_id: r for r in all_reviews}
 
     result: list[dict[str, object]] = []
     for item in items:
-        top_pred = session.exec(
-            select(Prediction)
-            .where(Prediction.item_id == item.id)
-            .order_by(Prediction.confidence.desc())  # type: ignore[attr-defined]
-        ).first()
-
-        review = session.exec(
-            select(ReviewRecord).where(ReviewRecord.item_id == item.id)
-        ).first()
+        top_pred = top_pred_by_item.get(item.id)  # type: ignore[arg-type]
+        review = review_by_item.get(item.id)  # type: ignore[arg-type]
         review_status = review.status if review else ReviewStatus.unreviewed
 
         top_label = top_pred.label if top_pred else None
