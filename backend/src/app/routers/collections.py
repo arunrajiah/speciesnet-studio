@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlmodel import Session
 
@@ -14,7 +16,7 @@ from app.services.ingestion import get_progress, walk_folder
 
 router = APIRouter(prefix="/api/collections", tags=["collections"])
 
-DATA_THUMBS_DIR = "./data/thumbs"
+DATA_THUMBS_DIR = os.environ.get("THUMBS_DIR", "./data/thumbs")
 
 
 def _to_read(session: Session, collection_id: int) -> CollectionRead:
