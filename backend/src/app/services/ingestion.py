@@ -32,29 +32,32 @@ def _collect_paths(folder: str) -> list[str]:
     return sorted(paths)
 
 
+_GPS_IFD_TAG = 0x8825  # EXIF tag for the GPS sub-IFD
+
+
 def _parse_exif(img: Image.Image) -> dict[str, Any]:
     data: dict[str, Any] = {}
     try:
-        raw = img._getexif()  # type: ignore[attr-defined]
-        if not raw:
+        exif = img.getexif()
+        if not exif:
             return data
-        exif: dict[str, Any] = {TAGS.get(k, k): v for k, v in raw.items()}
+        exif_tags: dict[str, Any] = {TAGS.get(k, k): v for k, v in exif.items()}
 
         # Datetime
         for tag in ("DateTimeOriginal", "DateTime"):
-            if tag in exif:
+            if tag in exif_tags:
                 try:
                     data["captured_at"] = datetime.strptime(
-                        str(exif[tag]), "%Y:%m:%d %H:%M:%S"
+                        str(exif_tags[tag]), "%Y:%m:%d %H:%M:%S"
                     ).replace(tzinfo=UTC)
                     break
                 except ValueError:
-                    logger.debug("Could not parse EXIF datetime tag %s: %r", tag, exif[tag])
+                    logger.debug("Could not parse EXIF datetime tag %s: %r", tag, exif_tags[tag])
 
-        # GPS
-        gps_info = exif.get("GPSInfo")
-        if gps_info and isinstance(gps_info, dict):
-            gps: dict[str, Any] = {GPSTAGS.get(k, k): v for k, v in gps_info.items()}
+        # GPS — use the public get_ifd() for the GPS sub-IFD
+        gps_ifd = exif.get_ifd(_GPS_IFD_TAG)
+        if gps_ifd:
+            gps: dict[str, Any] = {GPSTAGS.get(k, k): v for k, v in gps_ifd.items()}
             lat = _dms_to_decimal(gps.get("GPSLatitude"), gps.get("GPSLatitudeRef"))
             lon = _dms_to_decimal(gps.get("GPSLongitude"), gps.get("GPSLongitudeRef"))
             if lat is not None:
