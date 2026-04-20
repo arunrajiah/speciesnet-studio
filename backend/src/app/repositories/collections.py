@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app.models.collection import Collection
@@ -38,4 +39,7 @@ def delete_collection(session: Session, collection_id: int) -> bool:
 
 def count_items(session: Session, collection_id: int) -> int:
     """Return the number of items belonging to a collection."""
-    return len(list(session.exec(select(Item).where(Item.collection_id == collection_id)).all()))
+    result = session.exec(
+        select(func.count(Item.id)).where(Item.collection_id == collection_id)  # type: ignore[arg-type]
+    ).one()
+    return result or 0
