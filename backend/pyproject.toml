@@ -35,3 +35,20 @@ dev = [
     "httpx>=0.27.0",
     "types-pyyaml>=6.0.12.20260408",
 ]
+
+[tool.ruff]
+line-length = 100
+# Alembic migration files are auto-generated; exclude them from linting.
+exclude = ["alembic/"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]  # line length handled by formatter
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+exclude = ["alembic/"]
