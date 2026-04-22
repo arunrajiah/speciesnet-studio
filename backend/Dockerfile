@@ -9,9 +9,14 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project --system
 
-# Copy source and config
+# Copy application source and Alembic migrations
 COPY src/ ./src/
-COPY config/ ./config/
+COPY alembic/ ./alembic/
+COPY alembic.ini ./alembic.ini
+
+# config/inference.yaml is user-provided and must be mounted as a volume at runtime:
+#   -v ./config:/app/config   (docker run)
+#   volumes: - ./config:/app/config   (compose)
 
 ENV PYTHONPATH=/app/src
 
