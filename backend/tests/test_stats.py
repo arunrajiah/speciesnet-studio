@@ -114,4 +114,3 @@ def test_stats_empty_collection(session: Session) -> None:
     assert result["unreviewed"] == 0
     assert result["avg_confidence"] is None
     assert result["top_labels"] == []
-
