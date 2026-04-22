@@ -7,13 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-04-23
+
 ### Added
 
 - **Stats bar** — per-collection progress bar and pill counts (confirmed / overridden / flagged / unreviewed) with average confidence, shown in the collection header
 - **Batch review** — Select mode in the gallery lets you checkbox-pick multiple images and Approve all or Flag all in one action; backed by `POST /api/items/batch-review`
 - **MegaDetector adapter** — `MegaDetectorAdapter` runs `run_detector_batch.py` via subprocess with stdout/stderr progress streaming
-- **Alembic database migrations** — `alembic upgrade head` runs automatically on startup; three-path logic handles fresh installs, pre-alembic databases, and normal upgrades
-- **QUICKSTART.md** — end-to-end guide covering Docker, local dev, inference configuration, review workflow, batch actions, export, and the upgrade path
+- **Alembic database migrations** — `alembic upgrade head` runs automatically on startup; three-path logic handles fresh installs, pre-alembic databases, and normal upgrades without data loss
+- **QUICKSTART.md** — end-to-end guide covering Docker, local dev, inference configuration, review workflow, batch actions, export, and the upgrade path from v0.1.0
 - **PR automation workflow** — auto-labelling, size labels, auto-review-request, and a welcome comment for first-time contributors
 - **CODEOWNERS** — all PRs require `@arunrajiah` approval before merge
 - **ruff / mypy config in pyproject.toml** — explicit `[tool.ruff]`, `[tool.ruff.lint]`, `[tool.ruff.format]`, and `[tool.mypy]` sections
@@ -28,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Tests
 
-- Test count 19 → 33; new: `test_stats.py` (6 tests) and `test_batch_review.py` (8 tests)
+- Test count 19 → 30; new: `test_stats.py` (4 unit tests) and `test_batch_review.py` (7 tests)
 
 ## [0.1.0] — 2026-04-20
 
@@ -87,5 +89,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `StaticFiles` mount uses `check_dir=False` so tests pass before data directories are created
 
-[Unreleased]: https://github.com/arunrajiah/speciesnet-studio/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/arunrajiah/speciesnet-studio/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/arunrajiah/speciesnet-studio/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/arunrajiah/speciesnet-studio/releases/tag/v0.1.0
