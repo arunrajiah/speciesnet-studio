@@ -102,9 +102,9 @@ Implement the `InferenceAdapter` protocol (see [`backend/src/app/adapters/base.p
 
 ## Screenshots
 
-| Gallery | Review detail | Export |
-|---------|--------------|--------|
-| ![Gallery](./docs/media/screenshot-gallery.png) | ![Review detail](./docs/media/screenshot-review.png) | ![Export](./docs/media/screenshot-export.png) |
+| Gallery + stats | Batch review | Review detail | Export |
+|-----------------|--------------|--------------|--------|
+| ![Gallery](./docs/media/screenshot-gallery.png) | ![Batch review](./docs/media/screenshot-batch.png) | ![Review detail](./docs/media/screenshot-review.png) | ![Export](./docs/media/screenshot-export.png) |
 
 ---
 

@@ -1,10 +1,14 @@
 import { useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ItemRead } from '../types/item'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface GalleryProps {
   items: ItemRead[]
   onItemClick: (item: ItemRead) => void
+  selectionMode: boolean
+  selectedIds: Set<number>
+  onToggleSelect: (id: number) => void
 }
 
 const CELL_SIZE = 220
@@ -18,7 +22,7 @@ function confidenceColor(label: string | null, conf: number | null): string {
   return 'bg-red-500'
 }
 
-export function Gallery({ items, onItemClick }: GalleryProps) {
+export function Gallery({ items, onItemClick, selectionMode, selectedIds, onToggleSelect }: GalleryProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   const columnCount = useColumnCount(containerRef)
@@ -66,7 +70,14 @@ export function Gallery({ items, onItemClick }: GalleryProps) {
               }}
             >
               {rowItems.map((item) => (
-                <GalleryCell key={item.id} item={item} onClick={onItemClick} />
+                <GalleryCell
+                  key={item.id}
+                  item={item}
+                  onClick={onItemClick}
+                  selectionMode={selectionMode}
+                  selected={selectedIds.has(item.id)}
+                  onToggleSelect={onToggleSelect}
+                />
               ))}
               {/* fill empty slots in last row */}
               {rowItems.length < columnCount &&
@@ -84,19 +95,33 @@ export function Gallery({ items, onItemClick }: GalleryProps) {
 interface GalleryCellProps {
   item: ItemRead
   onClick: (item: ItemRead) => void
+  selectionMode: boolean
+  selected: boolean
+  onToggleSelect: (id: number) => void
 }
 
-function GalleryCell({ item, onClick }: GalleryCellProps) {
+function GalleryCell({ item, onClick, selectionMode, selected, onToggleSelect }: GalleryCellProps) {
   const badgeColor = confidenceColor(item.top_label, item.top_confidence)
   const confText =
     item.top_confidence !== null ? `${Math.round(item.top_confidence * 100)}%` : '—'
 
+  const handleClick = () => {
+    if (selectionMode) {
+      onToggleSelect(item.id)
+    } else {
+      onClick(item)
+    }
+  }
+
   return (
     <button
       type="button"
-      onClick={() => onClick(item)}
-      className="group relative overflow-hidden rounded-md bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+      onClick={handleClick}
+      className={`group relative overflow-hidden rounded-md bg-muted focus:outline-none focus:ring-2 focus:ring-ring ${
+        selected ? 'ring-2 ring-primary' : ''
+      }`}
       style={{ width: CELL_SIZE, height: CELL_SIZE, flexShrink: 0 }}
+      aria-pressed={selectionMode ? selected : undefined}
     >
       {item.thumbnail_url ? (
         <img
@@ -108,6 +133,19 @@ function GalleryCell({ item, onClick }: GalleryCellProps) {
       ) : (
         <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
           No image
+        </div>
+      )}
+
+      {/* selection checkbox */}
+      {selectionMode && (
+        <div className="absolute left-1.5 top-1.5 z-10">
+          <Checkbox
+            checked={selected}
+            onCheckedChange={() => onToggleSelect(item.id)}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`Select ${item.filename}`}
+            className="bg-white/90 shadow"
+          />
         </div>
       )}
 

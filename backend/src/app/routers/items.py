@@ -187,6 +187,66 @@ def list_labels(collection_id: int, session: Session = Depends(get_session)) -> 
     return sorted(set(labels))
 
 
+# ── batch review ─────────────────────────────────────────────────────────────
+
+
+@router.post("/items/batch-review")
+def batch_review(
+    body: dict[str, object],
+    session: Session = Depends(get_session),
+) -> dict[str, object]:
+    """Apply the same review decision to multiple items at once.
+
+    Body fields:
+    - ``item_ids`` (list[int], required): items to update.
+    - ``status`` (str, required): one of the ReviewStatus values.
+    - ``override_label`` (str | null, optional).
+    - ``reviewer_note`` (str | null, optional).
+
+    Returns ``{"updated": <count>}`` or 404 if any item_id is not found.
+    """
+    raw_ids = body.get("item_ids", [])
+    if not isinstance(raw_ids, list):
+        raise HTTPException(status_code=422, detail="item_ids must be a list")
+    item_ids: list[int] = []
+    for v in raw_ids:
+        if not isinstance(v, int):
+            raise HTTPException(status_code=422, detail="each item_id must be an integer")
+        item_ids.append(v)
+
+    raw_status = body.get("status", "confirmed")
+    if not isinstance(raw_status, str):
+        raise HTTPException(status_code=422, detail="status must be a string")
+    try:
+        review_status = ReviewStatus(raw_status)
+    except ValueError:
+        valid = ", ".join(s.value for s in ReviewStatus)
+        raise HTTPException(status_code=422, detail=f"status must be one of: {valid}") from None
+
+    raw_label = body.get("override_label")
+    override_label = str(raw_label) if isinstance(raw_label, str) and raw_label else None
+
+    raw_note = body.get("reviewer_note")
+    reviewer_note = str(raw_note) if isinstance(raw_note, str) and raw_note else None
+
+    for item_id in item_ids:
+        if session.get(Item, item_id) is None:
+            raise HTTPException(status_code=404, detail=f"Item {item_id} not found")
+
+    updated = 0
+    for item_id in item_ids:
+        upsert_review(
+            session,
+            item_id,
+            status=review_status,
+            override_label=override_label,
+            reviewer_note=reviewer_note,
+        )
+        updated += 1
+
+    return {"updated": updated}
+
+
 # ── review ────────────────────────────────────────────────────────────────────
 
 

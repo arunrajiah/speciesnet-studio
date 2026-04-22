@@ -1,14 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, ImageIcon, Play } from 'lucide-react'
+import { ArrowLeft, CheckSquare, ImageIcon, Play } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getCollection } from '../api/collections'
 import { startInference } from '../api/inference'
-import { listItems, listLabels } from '../api/items'
+import { batchReview, listItems, listLabels } from '../api/items'
 import { ExportDialog } from '../components/ExportDialog'
 import { FilterSidebar } from '../components/FilterSidebar'
 import { Gallery } from '../components/Gallery'
 import { InferenceProgressDialog } from '../components/InferenceProgressDialog'
+import { StatsBar } from '../components/StatsBar'
 import { useFilterParams } from '../hooks/useFilterParams'
 import type { ItemRead } from '../types/item'
 import { Badge } from '@/components/ui/badge'
@@ -23,6 +24,8 @@ export default function CollectionDetail() {
   const [jobId, setJobId] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [filters, setFilters] = useFilterParams()
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
 
   const { data: collection, isLoading, isError } = useQuery({
     queryKey: ['collections', collectionId],
@@ -50,6 +53,16 @@ export default function CollectionDetail() {
     },
   })
 
+  const batchMutation = useMutation({
+    mutationFn: (vars: { status: 'confirmed' | 'flagged' }) =>
+      batchReview(Array.from(selectedIds), vars),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['items', collectionId] })
+      queryClient.invalidateQueries({ queryKey: ['stats', collectionId] })
+      setSelectedIds(new Set())
+    },
+  })
+
   const handleDialogClose = () => {
     setDialogOpen(false)
     queryClient.invalidateQueries({ queryKey: ['collections', collectionId] })
@@ -58,6 +71,27 @@ export default function CollectionDetail() {
 
   const handleItemClick = (item: ItemRead) => {
     navigate(`/collections/${collectionId}/items/${item.id}`)
+  }
+
+  const handleToggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  const handleToggleSelectionMode = () => {
+    setSelectionMode((prev) => {
+      if (prev) {
+        setSelectedIds(new Set())
+      }
+      return !prev
+    })
   }
 
   if (isLoading) {
@@ -113,6 +147,15 @@ export default function CollectionDetail() {
         <Badge variant="secondary">{collection.item_count} images</Badge>
         <ExportDialog collectionId={collectionId} collectionName={collection.name} />
         <Button
+          variant={selectionMode ? 'secondary' : 'outline'}
+          onClick={handleToggleSelectionMode}
+          aria-pressed={selectionMode}
+          aria-label={selectionMode ? 'Cancel selection mode' : 'Enter selection mode'}
+        >
+          <CheckSquare className="mr-2 h-4 w-4" aria-hidden="true" />
+          {selectionMode ? 'Cancel' : 'Select'}
+        </Button>
+        <Button
           onClick={() => inferenceMutation.mutate()}
           disabled={inferenceMutation.isPending || collection.item_count === 0}
           aria-label="Run inference on this collection"
@@ -122,21 +165,64 @@ export default function CollectionDetail() {
         </Button>
       </div>
 
+      {/* stats bar */}
+      {collection.item_count > 0 && <StatsBar collectionId={collectionId} />}
+
       {/* body */}
       <div className="flex flex-1 overflow-hidden">
         <FilterSidebar labels={labels} filters={filters} onChange={setFilters} />
 
-        <div className="flex-1 overflow-hidden p-4">
-          {collection.item_count === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full space-y-3 text-center">
-              <ImageIcon className="h-12 w-12 text-muted-foreground" aria-hidden="true" />
-              <p className="text-muted-foreground">
-                Ingestion is running in the background. Images will appear here shortly.
-              </p>
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {/* bulk action toolbar */}
+          {selectionMode && (
+            <div className="flex items-center gap-3 border-b bg-background px-4 py-2 sticky top-0 z-10">
+              <span className="text-sm font-medium">
+                {selectedIds.size} selected
+              </span>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={selectedIds.size === 0 || batchMutation.isPending}
+                onClick={() => batchMutation.mutate({ status: 'confirmed' })}
+              >
+                Approve all
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={selectedIds.size === 0 || batchMutation.isPending}
+                onClick={() => batchMutation.mutate({ status: 'flagged' })}
+              >
+                Flag all
+              </Button>
+              <button
+                type="button"
+                className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                onClick={() => setSelectedIds(new Set())}
+              >
+                Clear selection
+              </button>
             </div>
-          ) : (
-            <Gallery items={items} onItemClick={handleItemClick} />
           )}
+
+          <div className="flex-1 overflow-hidden p-4">
+            {collection.item_count === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full space-y-3 text-center">
+                <ImageIcon className="h-12 w-12 text-muted-foreground" aria-hidden="true" />
+                <p className="text-muted-foreground">
+                  Ingestion is running in the background. Images will appear here shortly.
+                </p>
+              </div>
+            ) : (
+              <Gallery
+                items={items}
+                onItemClick={handleItemClick}
+                selectionMode={selectionMode}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
+              />
+            )}
+          </div>
         </div>
       </div>
 

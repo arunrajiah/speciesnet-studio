@@ -52,3 +52,14 @@ export interface ItemFilters {
   status?: ReviewStatus
   q?: string
 }
+
+export interface CollectionStats {
+  total: number
+  reviewed: number
+  unreviewed: number
+  confirmed: number
+  overridden: number
+  flagged: number
+  avg_confidence: number | null
+  top_labels: { label: string; count: number }[]
+}

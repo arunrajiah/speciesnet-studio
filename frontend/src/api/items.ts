@@ -1,5 +1,5 @@
 import { apiFetch } from './client'
-import type { ItemDetail, ItemFilters, ItemRead, ReviewRecord } from '../types/item'
+import type { CollectionStats, ItemDetail, ItemFilters, ItemRead, ReviewRecord, ReviewStatus } from '../types/item'
 
 export function listItems(collectionId: number, filters?: ItemFilters): Promise<ItemRead[]> {
   const params = new URLSearchParams()
@@ -28,5 +28,20 @@ export function submitReview(
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
+  })
+}
+
+export function getCollectionStats(collectionId: number): Promise<CollectionStats> {
+  return apiFetch<CollectionStats>(`/collections/${collectionId}/stats`)
+}
+
+export function batchReview(
+  itemIds: number[],
+  data: { status: ReviewStatus; override_label?: string; reviewer_note?: string },
+): Promise<{ updated: number }> {
+  return apiFetch<{ updated: number }>('/items/batch-review', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ item_ids: itemIds, ...data }),
   })
 }
