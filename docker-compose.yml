@@ -1,3 +1,12 @@
+# ── DEVELOPMENT compose ───────────────────────────────────────────────────────
+# Hot-reload for both backend and frontend.  NOT for production use.
+# For production, use docker-compose.prod.yml or build the root Dockerfile.
+#
+# Usage:
+#   docker compose up           # start both services
+#   docker compose up backend   # backend only (port 8000)
+# ─────────────────────────────────────────────────────────────────────────────
+
 services:
   backend:
     build:
@@ -6,8 +15,8 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./backend/src:/app/src
-      - ./data:/app/data
+      - ./backend/src:/app/src   # live source reload
+      - ./data:/app/data         # persisted DB + images
     environment:
       - PYTHONPATH=/app/src
     restart: unless-stopped
@@ -21,7 +30,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile   # runs pnpm dev — Vite HMR
     ports:
       - "5173:5173"
     environment:

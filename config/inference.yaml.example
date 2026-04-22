@@ -1,0 +1,33 @@
+# SpeciesNet Studio — inference adapter configuration
+#
+# ── Option A: native Python adapter (recommended) ────────────────────────────
+# Requires: uv pip install "speciesnet-studio-backend[speciesnet]"
+# Uses the speciesnet Python API directly; no subprocess overhead.
+#
+# adapter: speciesnet
+# speciesnet_model: null          # null → uses the default model from the package
+# speciesnet_country: null        # optional ISO-3166 country code for geofencing, e.g. KEN
+# speciesnet_geofence: true       # set to false to disable geographic species filtering
+#
+# ── Option B: subprocess adapter ─────────────────────────────────────────────
+# Works with any CLI tool that writes a SpeciesNet-compatible predictions JSON.
+# Placeholders {folder} and {output_json} are substituted at runtime.
+#
+# adapter: subprocess
+# adapter_command:
+#   - python
+#   - -m
+#   - speciesnet.scripts.run_model
+#   - --folders
+#   - "{folder}"
+#   - --predictions_json
+#   - "{output_json}"
+#   - --country
+#   - KEN
+#
+# ── Active configuration (placeholder — replace before use) ──────────────────
+
+adapter: subprocess
+adapter_command:
+  - echo
+  - "configure me — see config/inference.yaml"

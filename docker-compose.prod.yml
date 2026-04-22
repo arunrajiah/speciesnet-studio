@@ -1,0 +1,36 @@
+# ── PRODUCTION compose ────────────────────────────────────────────────────────
+# Single optimised image: FastAPI serves the compiled Vite frontend.
+# Builds from the root Dockerfile (multi-stage, lockfile-pinned deps).
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# First-time setup:
+#   mkdir -p data/images data/thumbs data/predictions
+#   cp config/inference.yaml.example config/inference.yaml  # then edit it
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  studio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: speciesnet-studio:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data               # DB, images, thumbnails, predictions
+      - ./config:/app/config           # inference.yaml (edit before first run)
+    environment:
+      - PYTHONPATH=/app/src
+      - DATABASE_URL=sqlite:///./data/app.db
+      - IMAGES_DIR=./data/images
+      - THUMBS_DIR=./data/thumbs
+      - PREDICTIONS_DIR=./data/predictions
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s

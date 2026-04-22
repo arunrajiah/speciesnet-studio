@@ -29,12 +29,27 @@ def _run_inference_task(job_id: str, collection_id: int, folder: str) -> None:
     output_json = os.path.join(PREDICTIONS_DIR, f"job_{job_id}.json")
 
     config = load_config()
+    _DEFAULT_CMD = ["echo", "configure me — see config/inference.yaml"]
     if config.get("adapter") == "speciesnet":
         adapter: SubprocessAdapter | SpeciesNetAdapter = SpeciesNetAdapter(
             model_name=config.get("speciesnet_model"),
             country=config.get("speciesnet_country"),
             geofence=bool(config.get("speciesnet_geofence", True)),
         )
+    elif config.get("adapter_command") == _DEFAULT_CMD:
+        update_job(
+            job_id,
+            status="failed",
+            error=(
+                "Inference is not configured. "
+                "Open config/inference.yaml and set adapter: speciesnet "
+                "(requires: uv pip install 'speciesnet-studio-backend[speciesnet]') "
+                "or configure a subprocess adapter. "
+                "See QUICKSTART.md for step-by-step instructions."
+            ),
+            finished_at=datetime.now(UTC).isoformat(),
+        )
+        return
     else:
         adapter = SubprocessAdapter(config.get("adapter_command", ["echo", "no-op"]))
 
