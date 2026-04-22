@@ -24,9 +24,10 @@ WORKDIR /app
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Install Python dependencies from the lockfile — reproducible, no surprises.
+# Install Python dependencies from the lockfile into system Python (no virtualenv in Docker)
+ENV UV_SYSTEM_PYTHON=1
 COPY backend/pyproject.toml backend/uv.lock ./
-RUN uv sync --frozen --no-dev --no-install-project --system
+RUN uv sync --frozen --no-dev --no-install-project
 
 # Copy application source, alembic migrations, and default config
 COPY backend/src/ ./src/
