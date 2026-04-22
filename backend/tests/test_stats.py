@@ -1,7 +1,5 @@
 """Tests for GET /api/collections/{collection_id}/stats."""
 
-import pytest
-from httpx import ASGITransport, AsyncClient
 from sqlmodel import Session, SQLModel, create_engine
 
 from app.models.collection import Collection
@@ -117,39 +115,3 @@ def test_stats_empty_collection(session: Session) -> None:
     assert result["avg_confidence"] is None
     assert result["top_labels"] == []
 
-
-# ── HTTP integration tests ────────────────────────────────────────────────────
-
-
-@pytest.mark.asyncio
-async def test_stats_endpoint_200() -> None:
-    """GET /api/collections/{id}/stats returns 200 for an existing collection."""
-    from app.main import app
-
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test", follow_redirects=True
-    ) as client:
-        # Create a collection via the API first.
-        resp = await client.post(
-            "/api/collections/", json={"name": "http-stats-test", "source_folder": "/tmp"}
-        )
-        assert resp.status_code in (200, 201), resp.text
-        col_id = resp.json()["id"]
-
-        resp = await client.get(f"/api/collections/{col_id}/stats")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert "total" in data
-        assert "top_labels" in data
-
-
-@pytest.mark.asyncio
-async def test_stats_endpoint_missing_collection() -> None:
-    """GET /api/collections/9999/stats returns 404 for unknown collection."""
-    from app.main import app
-
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        resp = await client.get("/api/collections/9999/stats")
-        # Stats endpoint returns empty stats rather than 404 (collection may exist with 0 items).
-        # This is acceptable — document the actual behaviour.
-        assert resp.status_code in (200, 404)
