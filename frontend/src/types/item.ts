@@ -53,6 +53,10 @@ export interface ItemFilters {
   q?: string
 }
 
+export interface AutoReviewPreview {
+  count: number
+}
+
 export interface CollectionStats {
   total: number
   reviewed: number

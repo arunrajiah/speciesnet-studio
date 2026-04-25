@@ -1,5 +1,13 @@
 import { apiFetch } from './client'
-import type { CollectionStats, ItemDetail, ItemFilters, ItemRead, ReviewRecord, ReviewStatus } from '../types/item'
+import type {
+  AutoReviewPreview,
+  CollectionStats,
+  ItemDetail,
+  ItemFilters,
+  ItemRead,
+  ReviewRecord,
+  ReviewStatus,
+} from '../types/item'
 
 export function listItems(collectionId: number, filters?: ItemFilters): Promise<ItemRead[]> {
   const params = new URLSearchParams()
@@ -43,5 +51,48 @@ export function batchReview(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ item_ids: itemIds, ...data }),
+  })
+}
+
+export function importPredictions(
+  collectionId: number,
+  predictionsPath: string,
+): Promise<{ imported: number; warnings: string[] }> {
+  return apiFetch<{ imported: number; warnings: string[] }>(
+    `/collections/${collectionId}/import-predictions`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ predictions_path: predictionsPath }),
+    },
+  )
+}
+
+export function autoReviewPreview(
+  collectionId: number,
+  params: { min_confidence?: number; labels?: string[]; only_unreviewed?: boolean },
+): Promise<AutoReviewPreview> {
+  const qs = new URLSearchParams()
+  if (params.min_confidence !== undefined) qs.set('min_confidence', String(params.min_confidence))
+  if (params.labels?.length) qs.set('labels', params.labels.join(','))
+  if (params.only_unreviewed !== undefined) qs.set('only_unreviewed', String(params.only_unreviewed))
+  return apiFetch<AutoReviewPreview>(
+    `/collections/${collectionId}/auto-review/preview?${qs.toString()}`,
+  )
+}
+
+export function runAutoReview(
+  collectionId: number,
+  body: {
+    status: ReviewStatus
+    min_confidence?: number
+    labels?: string[]
+    only_unreviewed?: boolean
+  },
+): Promise<{ reviewed: number }> {
+  return apiFetch<{ reviewed: number }>(`/collections/${collectionId}/auto-review`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
   })
 }

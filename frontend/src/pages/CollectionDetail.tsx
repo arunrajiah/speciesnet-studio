@@ -5,9 +5,11 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getCollection } from '../api/collections'
 import { startInference } from '../api/inference'
 import { batchReview, listItems, listLabels } from '../api/items'
+import { AutoReviewDialog } from '../components/AutoReviewDialog'
 import { ExportDialog } from '../components/ExportDialog'
 import { FilterSidebar } from '../components/FilterSidebar'
 import { Gallery } from '../components/Gallery'
+import { ImportPredictionsDialog } from '../components/ImportPredictionsDialog'
 import { InferenceProgressDialog } from '../components/InferenceProgressDialog'
 import { StatsBar } from '../components/StatsBar'
 import { useFilterParams } from '../hooks/useFilterParams'
@@ -145,6 +147,8 @@ export default function CollectionDetail() {
           <p className="text-xs text-muted-foreground truncate">{collection.source_folder}</p>
         </div>
         <Badge variant="secondary">{collection.item_count} images</Badge>
+        <ImportPredictionsDialog collectionId={collectionId} />
+        <AutoReviewDialog collectionId={collectionId} />
         <ExportDialog collectionId={collectionId} collectionName={collection.name} />
         <Button
           variant={selectionMode ? 'secondary' : 'outline'}

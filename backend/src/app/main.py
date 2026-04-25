@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from .db import init_db
+from .routers import auto_review as auto_review_router
 from .routers import collections as collections_router
 from .routers import export as export_router
 from .routers import inference as inference_router
@@ -46,6 +47,7 @@ def create_app() -> FastAPI:
     application.include_router(items_router.router)
     application.include_router(sample_router.router)
     application.include_router(stats_router.router)
+    application.include_router(auto_review_router.router)
 
     # Serve thumbnails and full-res images as static files
     application.mount("/thumbs", StaticFiles(directory=THUMBS_DIR, check_dir=False), name="thumbs")
