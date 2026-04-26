@@ -7,6 +7,8 @@ export interface ItemRead {
   top_label: string | null
   top_confidence: number | null
   review_status: ReviewStatus
+  latitude: number | null
+  longitude: number | null
 }
 
 export interface PredictionDetail {

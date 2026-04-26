@@ -115,6 +115,8 @@ def list_items(
                 "top_label": top_label,
                 "top_confidence": top_confidence,
                 "review_status": review_status,
+                "latitude": item.latitude,
+                "longitude": item.longitude,
             }
         )
 

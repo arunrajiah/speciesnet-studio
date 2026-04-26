@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, CheckSquare, ImageIcon, Play } from 'lucide-react'
+import { ArrowLeft, CheckSquare, ImageIcon, LayoutGrid, Map, Play } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getCollection } from '../api/collections'
@@ -11,6 +11,8 @@ import { FilterSidebar } from '../components/FilterSidebar'
 import { Gallery } from '../components/Gallery'
 import { ImportPredictionsDialog } from '../components/ImportPredictionsDialog'
 import { InferenceProgressDialog } from '../components/InferenceProgressDialog'
+import { lazy, Suspense } from 'react'
+const MapView = lazy(() => import('../components/MapView').then((m) => ({ default: m.MapView })))
 import { StatsBar } from '../components/StatsBar'
 import { useFilterParams } from '../hooks/useFilterParams'
 import type { ItemRead } from '../types/item'
@@ -28,6 +30,7 @@ export default function CollectionDetail() {
   const [filters, setFilters] = useFilterParams()
   const [selectionMode, setSelectionMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [viewMode, setViewMode] = useState<'gallery' | 'map'>('gallery')
 
   const { data: collection, isLoading, isError } = useQuery({
     queryKey: ['collections', collectionId],
@@ -147,18 +150,45 @@ export default function CollectionDetail() {
           <p className="text-xs text-muted-foreground truncate">{collection.source_folder}</p>
         </div>
         <Badge variant="secondary">{collection.item_count} images</Badge>
+
+        {/* View toggle */}
+        <div className="flex rounded-md border overflow-hidden shrink-0" role="group" aria-label="View mode">
+          <Button
+            variant={viewMode === 'gallery' ? 'secondary' : 'ghost'}
+            size="sm"
+            className="rounded-none border-0"
+            onClick={() => { setViewMode('gallery'); setSelectionMode(false); setSelectedIds(new Set()) }}
+            aria-pressed={viewMode === 'gallery'}
+            aria-label="Gallery view"
+          >
+            <LayoutGrid className="h-4 w-4" aria-hidden="true" />
+          </Button>
+          <Button
+            variant={viewMode === 'map' ? 'secondary' : 'ghost'}
+            size="sm"
+            className="rounded-none border-0 border-l"
+            onClick={() => { setViewMode('map'); setSelectionMode(false); setSelectedIds(new Set()) }}
+            aria-pressed={viewMode === 'map'}
+            aria-label="Map view"
+          >
+            <Map className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        </div>
+
         <ImportPredictionsDialog collectionId={collectionId} />
         <AutoReviewDialog collectionId={collectionId} />
         <ExportDialog collectionId={collectionId} collectionName={collection.name} />
-        <Button
-          variant={selectionMode ? 'secondary' : 'outline'}
-          onClick={handleToggleSelectionMode}
-          aria-pressed={selectionMode}
-          aria-label={selectionMode ? 'Cancel selection mode' : 'Enter selection mode'}
-        >
-          <CheckSquare className="mr-2 h-4 w-4" aria-hidden="true" />
-          {selectionMode ? 'Cancel' : 'Select'}
-        </Button>
+        {viewMode === 'gallery' && (
+          <Button
+            variant={selectionMode ? 'secondary' : 'outline'}
+            onClick={handleToggleSelectionMode}
+            aria-pressed={selectionMode}
+            aria-label={selectionMode ? 'Cancel selection mode' : 'Enter selection mode'}
+          >
+            <CheckSquare className="mr-2 h-4 w-4" aria-hidden="true" />
+            {selectionMode ? 'Cancel' : 'Select'}
+          </Button>
+        )}
         <Button
           onClick={() => inferenceMutation.mutate()}
           disabled={inferenceMutation.isPending || collection.item_count === 0}
@@ -209,22 +239,28 @@ export default function CollectionDetail() {
             </div>
           )}
 
-          <div className="flex-1 overflow-hidden p-4">
+          <div className="flex-1 overflow-hidden">
             {collection.item_count === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full space-y-3 text-center">
+              <div className="flex flex-col items-center justify-center h-full space-y-3 text-center p-4">
                 <ImageIcon className="h-12 w-12 text-muted-foreground" aria-hidden="true" />
                 <p className="text-muted-foreground">
                   Ingestion is running in the background. Images will appear here shortly.
                 </p>
               </div>
+            ) : viewMode === 'gallery' ? (
+              <div className="h-full overflow-hidden p-4">
+                <Gallery
+                  items={items}
+                  onItemClick={handleItemClick}
+                  selectionMode={selectionMode}
+                  selectedIds={selectedIds}
+                  onToggleSelect={handleToggleSelect}
+                />
+              </div>
             ) : (
-              <Gallery
-                items={items}
-                onItemClick={handleItemClick}
-                selectionMode={selectionMode}
-                selectedIds={selectedIds}
-                onToggleSelect={handleToggleSelect}
-              />
+              <Suspense fallback={<div className="flex items-center justify-center h-full text-muted-foreground text-sm">Loading map…</div>}>
+                <MapView collectionId={collectionId} items={items} />
+              </Suspense>
             )}
           </div>
         </div>
