@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, ChevronDown, Flag, Pencil, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { listLabels, submitReview } from '../api/items'
+import { useReviewerName } from '../hooks/useReviewerName'
 import type { ReviewDetail } from '../types/item'
 import { Button } from '@/components/ui/button'
 import {
@@ -37,6 +38,7 @@ export function ReviewControls({
   onPrev,
 }: ReviewControlsProps) {
   const queryClient = useQueryClient()
+  const [reviewerName] = useReviewerName()
   const [overrideLabel, setOverrideLabel] = useState(currentReview?.override_label ?? '')
   const [note, setNote] = useState(currentReview?.reviewer_note ?? '')
   const [comboOpen, setComboOpen] = useState(false)
@@ -52,6 +54,7 @@ export function ReviewControls({
         status: action,
         override_label: action === 'overridden' ? overrideLabel || undefined : undefined,
         reviewer_note: note || undefined,
+        reviewer_name: reviewerName || undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['items', collectionId] })
@@ -101,6 +104,9 @@ export function ReviewControls({
       <p className="text-xs text-muted-foreground">
         Current:{' '}
         <span className="font-medium capitalize text-foreground">{status}</span>
+        {currentReview?.reviewer_name && (
+          <span className="ml-1 text-muted-foreground">· by {currentReview.reviewer_name}</span>
+        )}
       </p>
 
       {/* action buttons */}

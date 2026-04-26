@@ -19,4 +19,5 @@ class ReviewRecord(SQLModel, table=True):
     status: ReviewStatus = ReviewStatus.unreviewed
     override_label: str | None = None
     reviewer_note: str | None = None
+    reviewer_name: str | None = None
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

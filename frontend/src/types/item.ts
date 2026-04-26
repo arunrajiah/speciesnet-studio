@@ -22,6 +22,7 @@ export interface ReviewDetail {
   status: ReviewStatus
   override_label: string | null
   reviewer_note: string | null
+  reviewer_name: string | null
 }
 
 export interface ItemDetail {
@@ -68,4 +69,5 @@ export interface CollectionStats {
   flagged: number
   avg_confidence: number | null
   top_labels: { label: string; count: number }[]
+  reviewers: { name: string; count: number }[]
 }

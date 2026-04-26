@@ -11,6 +11,8 @@ import { FilterSidebar } from '../components/FilterSidebar'
 import { Gallery } from '../components/Gallery'
 import { ImportPredictionsDialog } from '../components/ImportPredictionsDialog'
 import { InferenceProgressDialog } from '../components/InferenceProgressDialog'
+import { ReviewerNameDialog } from '../components/ReviewerNameDialog'
+import { useReviewerName } from '../hooks/useReviewerName'
 import { lazy, Suspense } from 'react'
 const MapView = lazy(() => import('../components/MapView').then((m) => ({ default: m.MapView })))
 import { StatsBar } from '../components/StatsBar'
@@ -31,6 +33,7 @@ export default function CollectionDetail() {
   const [selectionMode, setSelectionMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [viewMode, setViewMode] = useState<'gallery' | 'map'>('gallery')
+  const [reviewerName] = useReviewerName()
 
   const { data: collection, isLoading, isError } = useQuery({
     queryKey: ['collections', collectionId],
@@ -60,7 +63,7 @@ export default function CollectionDetail() {
 
   const batchMutation = useMutation({
     mutationFn: (vars: { status: 'confirmed' | 'flagged' }) =>
-      batchReview(Array.from(selectedIds), vars),
+      batchReview(Array.from(selectedIds), { ...vars, reviewer_name: reviewerName || undefined }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['items', collectionId] })
       queryClient.invalidateQueries({ queryKey: ['stats', collectionId] })
@@ -150,6 +153,7 @@ export default function CollectionDetail() {
           <p className="text-xs text-muted-foreground truncate">{collection.source_folder}</p>
         </div>
         <Badge variant="secondary">{collection.item_count} images</Badge>
+        <ReviewerNameDialog />
 
         {/* View toggle */}
         <div className="flex rounded-md border overflow-hidden shrink-0" role="group" aria-label="View mode">

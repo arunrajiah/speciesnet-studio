@@ -90,6 +90,19 @@ def get_collection_stats(
         for lbl, cnt in sorted(label_counts.items(), key=lambda kv: kv[1], reverse=True)[:10]
     ]
 
+    # ── query 3: review count per reviewer ───────────────────────────────────
+    reviewer_rows = session.exec(
+        select(ReviewRecord.reviewer_name, func.count(col(ReviewRecord.id)).label("cnt"))
+        .join(Item, col(ReviewRecord.item_id) == col(Item.id))
+        .where(col(Item.collection_id) == collection_id)
+        .where(col(ReviewRecord.status) != ReviewStatus.unreviewed)
+        .where(col(ReviewRecord.reviewer_name).is_not(None))
+        .group_by(ReviewRecord.reviewer_name)
+        .order_by(func.count(col(ReviewRecord.id)).desc())
+    ).all()
+
+    reviewers = [{"name": name, "count": cnt} for name, cnt in reviewer_rows if name]
+
     return {
         "total": total,
         "reviewed": reviewed,
@@ -99,4 +112,5 @@ def get_collection_stats(
         "flagged": flagged,
         "avg_confidence": avg_confidence,
         "top_labels": top_labels,
+        "reviewers": reviewers,
     }

@@ -47,8 +47,19 @@ export function StatsBar({ collectionId }: StatsBarProps) {
         </Pill>
       </div>
 
+      {stats.reviewers && stats.reviewers.length > 0 && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs text-muted-foreground">Reviewed by:</span>
+          {stats.reviewers.map(({ name, count }) => (
+            <Pill key={name} className="bg-muted text-muted-foreground">
+              {name} · {count}
+            </Pill>
+          ))}
+        </div>
+      )}
+
       {stats.avg_confidence !== null && (
-        <span className="ml-auto text-xs text-muted-foreground whitespace-nowrap">
+        <span className="ml-auto text-xs text-muted-foreground whitespace-nowrap shrink-0">
           avg {Math.round(stats.avg_confidence * 100)}%
         </span>
       )}

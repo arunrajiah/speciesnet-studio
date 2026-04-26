@@ -166,6 +166,7 @@ def get_item(item_id: int, session: Session = Depends(get_session)) -> dict[str,
             "status": review.status,
             "override_label": review.override_label,
             "reviewer_note": review.reviewer_note,
+            "reviewer_name": review.reviewer_name,
         }
         if review
         else None,
@@ -204,6 +205,7 @@ def batch_review(
     - ``status`` (str, required): one of the ReviewStatus values.
     - ``override_label`` (str | null, optional).
     - ``reviewer_note`` (str | null, optional).
+    - ``reviewer_name`` (str | null, optional): name of the person reviewing.
 
     Returns ``{"updated": <count>}`` or 404 if any item_id is not found.
     """
@@ -231,6 +233,9 @@ def batch_review(
     raw_note = body.get("reviewer_note")
     reviewer_note = str(raw_note) if isinstance(raw_note, str) and raw_note else None
 
+    raw_name = body.get("reviewer_name")
+    reviewer_name = str(raw_name) if isinstance(raw_name, str) and raw_name else None
+
     for item_id in item_ids:
         if session.get(Item, item_id) is None:
             raise HTTPException(status_code=404, detail=f"Item {item_id} not found")
@@ -243,6 +248,7 @@ def batch_review(
             status=review_status,
             override_label=override_label,
             reviewer_note=reviewer_note,
+            reviewer_name=reviewer_name,
         )
         updated += 1
 
@@ -274,6 +280,9 @@ def submit_review(
     raw_note = body.get("reviewer_note")
     reviewer_note = str(raw_note) if isinstance(raw_note, str) and raw_note else None
 
+    raw_name = body.get("reviewer_name")
+    reviewer_name = str(raw_name) if isinstance(raw_name, str) and raw_name else None
+
     try:
         review_status = ReviewStatus(status_val)
     except ValueError:
@@ -289,6 +298,7 @@ def submit_review(
         status=review_status,
         override_label=override_label,
         reviewer_note=reviewer_note,
+        reviewer_name=reviewer_name,
     )
     return {
         "id": record.id,
@@ -296,5 +306,6 @@ def submit_review(
         "status": record.status,
         "override_label": record.override_label,
         "reviewer_note": record.reviewer_note,
+        "reviewer_name": record.reviewer_name,
         "updated_at": record.updated_at.isoformat(),
     }

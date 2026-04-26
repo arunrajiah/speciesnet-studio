@@ -30,7 +30,7 @@ export function listLabels(collectionId: number): Promise<string[]> {
 
 export function submitReview(
   itemId: number,
-  data: { status: string; override_label?: string; reviewer_note?: string },
+  data: { status: string; override_label?: string; reviewer_note?: string; reviewer_name?: string },
 ): Promise<ReviewRecord> {
   return apiFetch<ReviewRecord>(`/items/${itemId}/review`, {
     method: 'PUT',
@@ -45,7 +45,12 @@ export function getCollectionStats(collectionId: number): Promise<CollectionStat
 
 export function batchReview(
   itemIds: number[],
-  data: { status: ReviewStatus; override_label?: string; reviewer_note?: string },
+  data: {
+    status: ReviewStatus
+    override_label?: string
+    reviewer_note?: string
+    reviewer_name?: string
+  },
 ): Promise<{ updated: number }> {
   return apiFetch<{ updated: number }>('/items/batch-review', {
     method: 'POST',
