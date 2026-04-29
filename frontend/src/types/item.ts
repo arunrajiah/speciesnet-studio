@@ -60,6 +60,17 @@ export interface AutoReviewPreview {
   count: number
 }
 
+export interface GeoItem {
+  id: number
+  filename: string
+  latitude: number
+  longitude: number
+  top_label: string | null
+  top_confidence: number | null
+  review_status: ReviewStatus
+  thumbnail_url: string | null
+}
+
 export interface CollectionStats {
   total: number
   reviewed: number

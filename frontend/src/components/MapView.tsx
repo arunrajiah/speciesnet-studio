@@ -1,196 +1,175 @@
-import 'leaflet/dist/leaflet.css'
+import { useQuery } from '@tanstack/react-query'
 import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import { MapPin } from 'lucide-react'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
-import { Link } from 'react-router-dom'
-import type { ItemRead, ReviewStatus } from '../types/item'
+import { useNavigate } from 'react-router-dom'
+import { listGeoItems } from '../api/items'
+import type { GeoItem, ReviewStatus } from '../types/item'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 
-// Fix Leaflet's default icon paths broken by bundlers
+// Fix Leaflet default icon paths broken by Vite bundler
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).href,
-  iconUrl: new URL('leaflet/dist/images/marker-icon.png', import.meta.url).href,
-  shadowUrl: new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).href,
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
-// Status → marker colour matching the confidence badge palette
-const STATUS_COLOUR: Record<ReviewStatus, string> = {
-  confirmed: '#22c55e',   // green-500
-  flagged: '#f59e0b',     // amber-500
-  overridden: '#3b82f6',  // blue-500
-  unreviewed: '#94a3b8',  // slate-400
+const STATUS_COLOR: Record<ReviewStatus, string> = {
+  confirmed: '#22c55e',
+  overridden: '#3b82f6',
+  flagged: '#f59e0b',
+  unreviewed: '#94a3b8',
 }
 
-function makeIcon(status: ReviewStatus) {
-  const colour = STATUS_COLOUR[status]
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="36" viewBox="0 0 24 36">
-      <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24S24 21 24 12C24 5.4 18.6 0 12 0z"
-            fill="${colour}" stroke="white" stroke-width="1.5"/>
-      <circle cx="12" cy="12" r="5" fill="white" fill-opacity="0.85"/>
-    </svg>`
+function makeIcon(status: ReviewStatus): L.DivIcon {
+  const color = STATUS_COLOR[status]
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="24" height="36">
+    <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24s12-15 12-24C24 5.373 18.627 0 12 0z"
+      fill="${color}" stroke="white" stroke-width="1.5"/>
+    <circle cx="12" cy="12" r="5" fill="white"/>
+  </svg>`
   return L.divIcon({
-    html: svg,
     className: '',
+    html: svg,
     iconSize: [24, 36],
     iconAnchor: [12, 36],
     popupAnchor: [0, -36],
   })
 }
 
-// Pre-build one icon per status to avoid re-creating on every render
-const ICONS: Record<ReviewStatus, L.DivIcon> = {
-  confirmed: makeIcon('confirmed'),
-  flagged: makeIcon('flagged'),
-  overridden: makeIcon('overridden'),
-  unreviewed: makeIcon('unreviewed'),
-}
-
-interface FitBoundsProps {
-  positions: [number, number][]
-}
-
-function FitBounds({ positions }: FitBoundsProps) {
+function BoundsController({ items }: { items: GeoItem[] }) {
   const map = useMap()
-  useMemo(() => {
-    if (positions.length === 0) return
-    if (positions.length === 1) {
-      map.setView(positions[0], 12)
-      return
-    }
-    map.fitBounds(positions, { padding: [40, 40] })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [positions.length])
+  const fitted = useRef(false)
+
+  useEffect(() => {
+    if (fitted.current || items.length === 0) return
+    const bounds = L.latLngBounds(items.map((i) => [i.latitude, i.longitude]))
+    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 })
+    fitted.current = true
+  }, [map, items])
+
   return null
 }
 
-interface Props {
+interface MapViewProps {
   collectionId: number
-  items: ItemRead[]
 }
 
-export function MapView({ collectionId, items }: Props) {
-  const gpsItems = useMemo(
-    () => items.filter((it) => it.latitude != null && it.longitude != null),
-    [items],
+export function MapView({ collectionId }: MapViewProps) {
+  const navigate = useNavigate()
+
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ['geo-items', collectionId],
+    queryFn: () => listGeoItems(collectionId),
+  })
+
+  const icons = useMemo(
+    () => ({
+      confirmed: makeIcon('confirmed'),
+      overridden: makeIcon('overridden'),
+      flagged: makeIcon('flagged'),
+      unreviewed: makeIcon('unreviewed'),
+    }),
+    [],
   )
 
-  const positions = useMemo(
-    () => gpsItems.map((it) => [it.latitude!, it.longitude!] as [number, number]),
-    [gpsItems],
-  )
-
-  const noGpsCount = items.length - gpsItems.length
+  if (isLoading) {
+    return <Skeleton className="h-full w-full rounded-none" />
+  }
 
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-        <MapPin className="h-10 w-10" aria-hidden="true" />
-        <p>No images match the current filters.</p>
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-4">
+        <MapPin className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
+        <p className="text-muted-foreground text-sm max-w-xs">
+          No GPS data found. Images with EXIF geotags will appear here as map markers.
+        </p>
       </div>
     )
   }
 
-  if (gpsItems.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-        <MapPin className="h-10 w-10" aria-hidden="true" />
-        <p className="text-sm">None of the {items.length} matching images have GPS coordinates.</p>
-        <p className="text-xs">GPS data is read from image EXIF at import time.</p>
-      </div>
-    )
-  }
+  const center: [number, number] = [items[0].latitude, items[0].longitude]
 
   return (
-    <div className="relative flex flex-col h-full">
-      {/* GPS coverage banner */}
-      <div className="flex items-center justify-between px-4 py-1.5 text-xs text-muted-foreground border-b bg-muted/30 shrink-0">
-        <span>
-          Showing <strong className="text-foreground">{gpsItems.length}</strong> of{' '}
-          <strong className="text-foreground">{items.length}</strong> images with GPS coordinates
-          {noGpsCount > 0 && (
-            <span className="ml-1">· {noGpsCount} without GPS hidden</span>
-          )}
-        </span>
-        {/* Legend */}
-        <div className="flex items-center gap-3">
-          {(
-            [
-              ['confirmed', 'Confirmed'],
-              ['overridden', 'Overridden'],
-              ['flagged', 'Flagged'],
-              ['unreviewed', 'Unreviewed'],
-            ] as [ReviewStatus, string][]
-          ).map(([status, label]) => (
-            <span key={status} className="flex items-center gap-1">
-              <span
-                className="inline-block h-2.5 w-2.5 rounded-full ring-1 ring-white/60"
-                style={{ background: STATUS_COLOUR[status] }}
-                aria-hidden="true"
-              />
-              {label}
-            </span>
-          ))}
-        </div>
+    <div className="relative h-full w-full">
+      {/* Legend */}
+      <div className="absolute bottom-6 right-3 z-[1000] flex flex-col gap-1.5 rounded-lg border bg-background/95 px-3 py-2.5 text-xs shadow-md backdrop-blur">
+        {(Object.entries(STATUS_COLOR) as [ReviewStatus, string][]).map(([status, color]) => (
+          <div key={status} className="flex items-center gap-2">
+            <span
+              className="inline-block h-2.5 w-2.5 rounded-full"
+              style={{ background: color }}
+            />
+            <span className="capitalize">{status}</span>
+          </div>
+        ))}
       </div>
 
-      {/* Map */}
-      <div className="flex-1 min-h-0">
-        <MapContainer
-          center={[0, 0]}
-          zoom={2}
-          style={{ height: '100%', width: '100%' }}
-          attributionControl
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          <FitBounds positions={positions} />
+      {/* Count badge */}
+      <div className="absolute top-3 right-3 z-[1000]">
+        <Badge variant="secondary" className="shadow-sm">
+          {items.length} geotagged image{items.length !== 1 ? 's' : ''}
+        </Badge>
+      </div>
 
-          {gpsItems.map((item) => (
-            <Marker
-              key={item.id}
-              position={[item.latitude!, item.longitude!]}
-              icon={ICONS[item.review_status]}
-            >
-              <Popup maxWidth={220} className="leaflet-popup-studio">
-                <div className="space-y-2 text-sm">
-                  {item.thumbnail_url && (
-                    <img
-                      src={item.thumbnail_url}
-                      alt={item.filename}
-                      className="w-full rounded object-cover"
-                      style={{ maxHeight: 120 }}
-                    />
-                  )}
-                  <p className="font-medium truncate text-foreground">{item.filename}</p>
-                  {item.top_label && (
-                    <p className="text-muted-foreground">
-                      {item.top_label}
-                      {item.top_confidence != null && (
-                        <span className="ml-1 font-semibold">
-                          {Math.round(item.top_confidence * 100)}%
-                        </span>
-                      )}
-                    </p>
-                  )}
-                  <p className="capitalize" style={{ color: STATUS_COLOUR[item.review_status] }}>
-                    ● {item.review_status}
+      <MapContainer center={center} zoom={10} className="h-full w-full" zoomControl>
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        />
+        <BoundsController items={items} />
+        {items.map((item) => (
+          <Marker
+            key={item.id}
+            position={[item.latitude, item.longitude]}
+            icon={icons[item.review_status]}
+          >
+            <Popup minWidth={200} maxWidth={260}>
+              <div className="space-y-2 py-1 text-sm">
+                {item.thumbnail_url && (
+                  <img
+                    src={item.thumbnail_url}
+                    alt={item.filename}
+                    className="w-full rounded object-cover"
+                    style={{ maxHeight: 120 }}
+                  />
+                )}
+                <p className="font-medium truncate leading-snug" title={item.filename}>
+                  {item.filename}
+                </p>
+                {item.top_label && (
+                  <p className="text-muted-foreground">
+                    {item.top_label}
+                    {item.top_confidence !== null && (
+                      <span className="ml-1 text-xs opacity-70">
+                        {Math.round(item.top_confidence * 100)}%
+                      </span>
+                    )}
                   </p>
-                  <Link
-                    to={`/collections/${collectionId}/items/${item.id}`}
-                    className="block text-center rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:opacity-90"
-                  >
-                    View image →
-                  </Link>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
-      </div>
+                )}
+                <p
+                  className="text-xs capitalize font-medium"
+                  style={{ color: STATUS_COLOR[item.review_status] }}
+                >
+                  {item.review_status}
+                </p>
+                <Button
+                  size="sm"
+                  className="w-full"
+                  onClick={() => navigate(`/collections/${collectionId}/items/${item.id}`)}
+                >
+                  Review image
+                </Button>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
     </div>
   )
 }

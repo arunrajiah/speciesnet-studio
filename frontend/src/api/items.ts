@@ -2,6 +2,7 @@ import { apiFetch } from './client'
 import type {
   AutoReviewPreview,
   CollectionStats,
+  GeoItem,
   ItemDetail,
   ItemFilters,
   ItemRead,
@@ -57,6 +58,10 @@ export function batchReview(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ item_ids: itemIds, ...data }),
   })
+}
+
+export function listGeoItems(collectionId: number): Promise<GeoItem[]> {
+  return apiFetch<GeoItem[]>(`/collections/${collectionId}/geo-items`)
 }
 
 export function importPredictions(

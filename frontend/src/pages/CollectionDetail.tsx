@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, CheckSquare, ImageIcon, LayoutGrid, Map, Play } from 'lucide-react'
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getCollection } from '../api/collections'
 import { startInference } from '../api/inference'
@@ -12,15 +12,15 @@ import { Gallery } from '../components/Gallery'
 import { ImportPredictionsDialog } from '../components/ImportPredictionsDialog'
 import { InferenceProgressDialog } from '../components/InferenceProgressDialog'
 import { ReviewerNameDialog } from '../components/ReviewerNameDialog'
-import { useReviewerName } from '../hooks/useReviewerName'
-import { lazy, Suspense } from 'react'
-const MapView = lazy(() => import('../components/MapView').then((m) => ({ default: m.MapView })))
 import { StatsBar } from '../components/StatsBar'
 import { useFilterParams } from '../hooks/useFilterParams'
+import { useReviewerName } from '../hooks/useReviewerName'
 import type { ItemRead } from '../types/item'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+
+const MapView = lazy(() => import('../components/MapView').then((m) => ({ default: m.MapView })))
 
 export default function CollectionDetail() {
   const { id } = useParams<{ id: string }>()
@@ -208,7 +208,9 @@ export default function CollectionDetail() {
 
       {/* body */}
       <div className="flex flex-1 overflow-hidden">
-        <FilterSidebar labels={labels} filters={filters} onChange={setFilters} />
+        {viewMode === 'gallery' && (
+          <FilterSidebar labels={labels} filters={filters} onChange={setFilters} />
+        )}
 
         <div className="flex flex-col flex-1 overflow-hidden">
           {/* bulk action toolbar */}
@@ -263,7 +265,7 @@ export default function CollectionDetail() {
               </div>
             ) : (
               <Suspense fallback={<div className="flex items-center justify-center h-full text-muted-foreground text-sm">Loading map…</div>}>
-                <MapView collectionId={collectionId} items={items} />
+                <MapView collectionId={collectionId} />
               </Suspense>
             )}
           </div>

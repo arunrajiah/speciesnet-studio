@@ -173,6 +173,71 @@ def get_item(item_id: int, session: Session = Depends(get_session)) -> dict[str,
     }
 
 
+# ── geo items ─────────────────────────────────────────────────────────────────
+
+
+@router.get("/collections/{collection_id}/geo-items")
+def list_geo_items(
+    collection_id: int,
+    session: Session = Depends(get_session),
+) -> list[dict[str, object]]:
+    """Return items that have GPS coordinates, with top prediction and review status.
+
+    Designed for map views — only items with both latitude and longitude are included.
+    """
+    items = list(
+        session.exec(
+            select(Item)
+            .where(Item.collection_id == collection_id)
+            .where(col(Item.latitude).is_not(None))
+            .where(col(Item.longitude).is_not(None))
+        ).all()
+    )
+    if not items:
+        return []
+
+    item_ids = [i.id for i in items if i.id is not None]
+
+    all_preds = list(
+        session.exec(
+            select(Prediction)
+            .where(col(Prediction.item_id).in_(item_ids))
+            .order_by(Prediction.confidence.desc())  # type: ignore[attr-defined]
+        ).all()
+    )
+    all_reviews = list(
+        session.exec(select(ReviewRecord).where(col(ReviewRecord.item_id).in_(item_ids))).all()
+    )
+
+    top_pred_by_item: dict[int, Prediction] = {}
+    for pred in all_preds:
+        if pred.item_id not in top_pred_by_item:
+            top_pred_by_item[pred.item_id] = pred
+
+    review_by_item: dict[int, ReviewRecord] = {r.item_id: r for r in all_reviews}
+
+    return [
+        {
+            "id": item.id,
+            "filename": item.filename,
+            "latitude": item.latitude,
+            "longitude": item.longitude,
+            "top_label": top_pred_by_item[item.id].label if item.id in top_pred_by_item else None,
+            "top_confidence": (
+                top_pred_by_item[item.id].confidence if item.id in top_pred_by_item else None
+            ),
+            "review_status": (
+                review_by_item[item.id].status
+                if item.id in review_by_item
+                else ReviewStatus.unreviewed
+            ),
+            "thumbnail_url": _thumb_url(item.thumbnail_path) if item.thumbnail_path else None,
+        }
+        for item in items
+        if item.id is not None
+    ]
+
+
 # ── labels ────────────────────────────────────────────────────────────────────
 
 
