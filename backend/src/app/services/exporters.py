@@ -52,6 +52,7 @@ def _build_rows(session: Session, collection_id: int) -> list[dict[str, object]]
                 "review_status": review.status if review else ReviewStatus.unreviewed,
                 "override_label": review.override_label if review else None,
                 "reviewer_note": review.reviewer_note if review else None,
+                "reviewer_name": review.reviewer_name if review else None,
             }
         )
 

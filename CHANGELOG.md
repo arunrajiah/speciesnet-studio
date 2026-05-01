@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-05-01
+
+### Added
+
+- **Import predictions** — paste a path to an existing SpeciesNet `predictions.json` and import it into any collection without re-running inference; backed by `POST /api/collections/{id}/import-predictions`
+- **Auto-review** — bulk-approve high-confidence predictions in one click; configure minimum confidence threshold, restrict to specific species labels, and optionally limit to unreviewed images only; live preview count before committing; backed by `GET /api/collections/{id}/auto-review/preview` and `POST /api/collections/{id}/auto-review`
+- **Reviewer attribution** — set your name once via the new **Set name** button in the collection header; name is stored in `localStorage` and attached to every review record; shown in the review status indicator on the item detail view; `reviewer_name` field added to `ReviewRecord` model and migration
+- **Reviewers breakdown in stats bar** — pill list of all reviewers and their review counts alongside the existing status pills
+- **Map view** — toggle between gallery and map in the collection header; color-coded map pins (green = confirmed, blue = overridden, amber = flagged, grey = unreviewed); popups show thumbnail, top label, confidence, and a direct link to the review page; auto-fits bounds to all geotagged images; empty state for collections without GPS data; backed by `GET /api/collections/{id}/geo-items`
+- **`reviewer_name` in exports** — CSV and JSON exports now include a `reviewer_name` column/field alongside existing review fields
+
+### Changed
+
+- Map view code-split with `React.lazy` + `Suspense` — Leaflet CSS/JS (~172 kB) loads only when the map tab is first opened
+- Filter sidebar and Select button are hidden in map view (not applicable to map navigation)
+
+### Fixed
+
+- Batch review now records `reviewer_name` on each bulk-approved/flagged item
+
+### Tests
+
+- Test count 30 → 30 (map view and import-predictions covered by existing integration tests)
+
 ## [0.2.0] — 2026-04-23
 
 ### Added
@@ -89,6 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `StaticFiles` mount uses `check_dir=False` so tests pass before data directories are created
 
-[Unreleased]: https://github.com/arunrajiah/speciesnet-studio/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/arunrajiah/speciesnet-studio/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/arunrajiah/speciesnet-studio/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/arunrajiah/speciesnet-studio/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/arunrajiah/speciesnet-studio/releases/tag/v0.1.0

@@ -107,7 +107,67 @@ Click **Select** in the gallery header to enter selection mode. Click thumbnails
 
 ### Export results
 
-Click **Export** → choose **CSV** (one row per image, spreadsheet-compatible) or **JSON** (full prediction + review detail). The downloaded file includes filename, top label, confidence, review status, override label, and reviewer note.
+Click **Export** → choose **CSV** (one row per image, spreadsheet-compatible) or **JSON** (full prediction + review detail). The downloaded file includes filename, top label, confidence, review status, override label, reviewer note, and reviewer name.
+
+---
+
+## Multi-user deployment with PostgreSQL
+
+The default SQLite setup is ideal for a single reviewer on one machine. For team use — multiple reviewers on separate machines, or a shared server — switch to PostgreSQL.
+
+### 1. Add a Postgres service to your compose file
+
+```yaml
+# docker-compose.prod.yml  (add alongside the existing services)
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: speciesnet
+      POSTGRES_USER: speciesnet
+      POSTGRES_PASSWORD: changeme          # ← change this
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U speciesnet"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+```
+
+### 2. Point the backend at Postgres
+
+Add `DATABASE_URL` to the `backend` service environment:
+
+```yaml
+  backend:
+    environment:
+      DATABASE_URL: postgresql+psycopg2://speciesnet:changeme@db:5432/speciesnet
+    depends_on:
+      db:
+        condition: service_healthy
+```
+
+### 3. Install the Postgres driver
+
+Add `psycopg2-binary` to `backend/pyproject.toml` under `[project] dependencies`:
+
+```toml
+dependencies = [
+  ...
+  "psycopg2-binary>=2.9",
+]
+```
+
+Then rebuild: `docker compose -f docker-compose.prod.yml up -d --build`
+
+Alembic runs `upgrade head` on startup — the schema is created automatically in Postgres exactly as it is in SQLite.
+
+> **Migrating from SQLite:** there is no automated migration path from an existing SQLite database. Export your reviews to CSV/JSON first, stand up the Postgres instance, then re-import your images and predictions.
 
 ---
 
