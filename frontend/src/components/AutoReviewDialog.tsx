@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Wand2 } from 'lucide-react'
-import { useState } from 'react'
+import { useDeferredValue, useState } from 'react'
 import { autoReviewPreview, runAutoReview } from '../api/items'
+import { useReviewerName } from '../hooks/useReviewerName'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,33 +17,35 @@ import {
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 
-// Labels SpeciesNet assigns to non-wildlife frames
-const BLANK_LABELS = ['blank', 'human', 'vehicle', 'no_cv_result']
-
 interface Props {
   collectionId: number
 }
 
 export function AutoReviewDialog({ collectionId }: Props) {
   const queryClient = useQueryClient()
+  const [reviewerName] = useReviewerName()
   const [open, setOpen] = useState(false)
 
   // Confidence threshold slider — stored as 0–100 integer for display
   const [threshold, setThreshold] = useState(90)
+  // Defer slider changes so rapid dragging doesn't fire a new preview request
+  // on every tick — the query only re-fires once the user pauses.
+  const deferredThreshold = useDeferredValue(threshold)
   const [includeBlanks, setIncludeBlanks] = useState(true)
   const [result, setResult] = useState<{ reviewed: number } | null>(null)
 
-  // Live count preview — refetches whenever threshold or includeBlanks changes
-  const minConf = threshold / 100
-  const labels = includeBlanks ? BLANK_LABELS : undefined
+  const minConf = deferredThreshold / 100
 
+  // Live count preview — refetches when settled threshold or includeBlanks changes.
+  // When includeBlanks is true the backend uses include_blank_labels=true, which
+  // approves blank/human/vehicle frames regardless of the confidence threshold.
   const { data: preview } = useQuery({
-    queryKey: ['auto-review-preview', collectionId, threshold, includeBlanks],
+    queryKey: ['auto-review-preview', collectionId, deferredThreshold, includeBlanks],
     queryFn: () =>
       autoReviewPreview(collectionId, {
         min_confidence: minConf,
-        labels: includeBlanks ? BLANK_LABELS : undefined,
         only_unreviewed: true,
+        include_blank_labels: includeBlanks,
       }),
     enabled: open && !result,
   })
@@ -52,8 +55,9 @@ export function AutoReviewDialog({ collectionId }: Props) {
       runAutoReview(collectionId, {
         status: 'confirmed',
         min_confidence: minConf,
-        labels,
         only_unreviewed: true,
+        include_blank_labels: includeBlanks,
+        reviewer_name: reviewerName || undefined,
       }),
     onSuccess: (data) => {
       setResult(data)
@@ -128,7 +132,7 @@ export function AutoReviewDialog({ collectionId }: Props) {
                 </Label>
                 <p className="text-xs text-muted-foreground">
                   Images labelled <em>blank</em>, <em>human</em>, or <em>vehicle</em> will be
-                  confirmed regardless of the threshold above.
+                  confirmed regardless of the confidence threshold above.
                 </p>
               </div>
             </div>
@@ -172,9 +176,7 @@ export function AutoReviewDialog({ collectionId }: Props) {
               onClick={() => mutation.mutate()}
               disabled={count === 0 || mutation.isPending}
             >
-              {mutation.isPending
-                ? 'Approving…'
-                : `Approve ${count > 0 ? count : ''} image${count !== 1 ? 's' : ''}`}
+              {mutation.isPending ? 'Approving…' : `Approve ${count} image${count !== 1 ? 's' : ''}`}
             </Button>
           )}
         </DialogFooter>

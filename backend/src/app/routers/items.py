@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -45,6 +46,8 @@ def list_items(
     max_conf: float | None = None,
     status: str | None = None,
     q: str | None = None,
+    captured_after: str | None = None,
+    captured_before: str | None = None,
     session: Session = Depends(get_session),
 ) -> list[dict[str, object]]:
     """Return items for a collection with optional filters."""
@@ -61,6 +64,23 @@ def list_items(
                 status_code=422,
                 detail=f"status must be one of: {', '.join(valid_statuses)}",
             )
+
+    dt_after: datetime | None = None
+    dt_before: datetime | None = None
+    if captured_after:
+        try:
+            dt_after = datetime.fromisoformat(captured_after)
+        except ValueError:
+            raise HTTPException(
+                status_code=422, detail="captured_after must be an ISO-8601 date string"
+            ) from None
+    if captured_before:
+        try:
+            dt_before = datetime.fromisoformat(captured_before)
+        except ValueError:
+            raise HTTPException(
+                status_code=422, detail="captured_before must be an ISO-8601 date string"
+            ) from None
 
     items = list(session.exec(select(Item).where(Item.collection_id == collection_id)).all())
     if not items:
@@ -105,6 +125,10 @@ def list_items(
         if status and review_status != status:
             continue
         if q and q.lower() not in item.filename.lower():
+            continue
+        if dt_after is not None and (item.captured_at is None or item.captured_at < dt_after):
+            continue
+        if dt_before is not None and (item.captured_at is None or item.captured_at > dt_before):
             continue
 
         result.append(
@@ -252,7 +276,7 @@ def list_labels(collection_id: int, session: Session = Depends(get_session)) -> 
             .distinct()
         ).all()
     )
-    return sorted(set(labels))
+    return sorted(labels)
 
 
 # ── batch review ─────────────────────────────────────────────────────────────
@@ -301,9 +325,16 @@ def batch_review(
     raw_name = body.get("reviewer_name")
     reviewer_name = str(raw_name) if isinstance(raw_name, str) and raw_name else None
 
-    for item_id in item_ids:
-        if session.get(Item, item_id) is None:
-            raise HTTPException(status_code=404, detail=f"Item {item_id} not found")
+    # Validate all IDs exist in a single query instead of N individual lookups
+    if item_ids:
+        found_ids = set(
+            session.exec(select(col(Item.id)).where(col(Item.id).in_(item_ids))).all()
+        )
+        missing = set(item_ids) - found_ids
+        if missing:
+            raise HTTPException(
+                status_code=404, detail=f"Items not found: {sorted(missing)}"
+            )
 
     updated = 0
     for item_id in item_ids:

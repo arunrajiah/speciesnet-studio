@@ -11,6 +11,8 @@ export function useFilterParams(): [ItemFilters, (f: Partial<ItemFilters>) => vo
     max_conf: searchParams.has('max_conf') ? Number(searchParams.get('max_conf')) : undefined,
     status: (searchParams.get('status') as ItemFilters['status']) ?? undefined,
     q: searchParams.get('q') ?? undefined,
+    captured_after: searchParams.get('captured_after') ?? undefined,
+    captured_before: searchParams.get('captured_before') ?? undefined,
   }
 
   const setFilters = useCallback(
@@ -34,6 +36,12 @@ export function useFilterParams(): [ItemFilters, (f: Partial<ItemFilters>) => vo
 
           if (merged.q) next.set('q', merged.q)
           else next.delete('q')
+
+          if (merged.captured_after) next.set('captured_after', merged.captured_after)
+          else next.delete('captured_after')
+
+          if (merged.captured_before) next.set('captured_before', merged.captured_before)
+          else next.delete('captured_before')
 
           return next
         },

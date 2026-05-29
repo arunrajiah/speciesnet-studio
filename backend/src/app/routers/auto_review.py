@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlmodel import Session, col, select
 
 from app.db import get_session
@@ -13,6 +13,9 @@ from app.repositories.reviews import upsert_review
 from app.services.results_parser import parse_predictions_json, persist_predictions
 
 router = APIRouter(prefix="/api", tags=["auto-review"])
+
+# Labels SpeciesNet assigns to non-wildlife frames — kept as a frozenset for O(1) lookup
+BLANK_LABELS: frozenset[str] = frozenset({"blank", "human", "vehicle", "no_cv_result"})
 
 # ---------------------------------------------------------------------------
 # Feature 1 – Import predictions
@@ -72,6 +75,16 @@ class AutoReviewBody(BaseModel):
     min_confidence: float | None = None
     labels: list[str] | None = None
     only_unreviewed: bool = True
+    # When True, approve ALL blank/human/vehicle frames regardless of confidence
+    include_blank_labels: bool = False
+    reviewer_name: str | None = None
+
+    @field_validator("min_confidence")
+    @classmethod
+    def validate_min_confidence(cls, v: float | None) -> float | None:
+        if v is not None and not (0.0 <= v <= 1.0):
+            raise ValueError("min_confidence must be between 0.0 and 1.0")
+        return v
 
 
 class AutoReviewPreviewResponse(BaseModel):
@@ -86,7 +99,6 @@ def _top_predictions_by_item(session: Session, collection_id: int) -> dict[int, 
     """Return a mapping of item_id -> (label, confidence) for the highest-confidence
     prediction per item in the given collection.
     """
-    # Subquery: max confidence per item
     from sqlalchemy import func
 
     max_conf_sub = (
@@ -123,9 +135,15 @@ def _candidate_item_ids(
     min_confidence: float | None,
     labels: list[str] | None,
     only_unreviewed: bool,
+    include_blank_labels: bool = False,
 ) -> list[int]:
-    """Return item IDs that satisfy all filter criteria."""
-    # Step 1: load all item IDs for the collection
+    """Return item IDs that satisfy all filter criteria.
+
+    When *include_blank_labels* is True, items whose top label is one of the
+    BLANK_LABELS set are always included regardless of the confidence threshold.
+    This lets callers sweep high-confidence wildlife AND clear all obvious
+    blank/human/vehicle frames in a single operation.
+    """
     item_ids: list[int] = [
         row
         for row in session.exec(
@@ -137,10 +155,8 @@ def _candidate_item_ids(
     if not item_ids:
         return []
 
-    # Step 2: top prediction per item
     top_preds = _top_predictions_by_item(session, collection_id)
 
-    # Step 3: items that are already reviewed (when only_unreviewed=True)
     reviewed_item_ids: set[int] = set()
     if only_unreviewed:
         review_rows = session.exec(
@@ -154,20 +170,27 @@ def _candidate_item_ids(
 
     candidates: list[int] = []
     for item_id in item_ids:
-        # Step 3 filter: skip already-reviewed
         if only_unreviewed and item_id in reviewed_item_ids:
             continue
 
         pred = top_preds.get(item_id)
+        label = pred[0] if pred else None
+        confidence = pred[1] if pred else None
+        is_blank = label in BLANK_LABELS if label else False
 
-        # Step 4: filter by min_confidence
+        # Blank-label items are always included when the flag is set
+        if include_blank_labels and is_blank:
+            candidates.append(item_id)
+            continue
+
+        # Confidence filter
         if min_confidence is not None:
-            if pred is None or pred[1] < min_confidence:
+            if confidence is None or confidence < min_confidence:
                 continue
 
-        # Step 5: filter by labels
+        # Label allow-list filter (explicit labels param, independent of blank logic)
         if labels is not None:
-            if pred is None or pred[0] not in labels:
+            if label is None or label not in labels:
                 continue
 
         candidates.append(item_id)
@@ -184,9 +207,13 @@ def auto_review_preview(
     min_confidence: float | None = None,
     labels: str | None = None,
     only_unreviewed: bool = True,
+    include_blank_labels: bool = False,
     session: Session = Depends(get_session),
 ) -> AutoReviewPreviewResponse:
     """Return the count of items that would be affected by an auto-review operation."""
+    if min_confidence is not None and not (0.0 <= min_confidence <= 1.0):
+        raise HTTPException(status_code=422, detail="min_confidence must be between 0.0 and 1.0")
+
     collection = get_collection(session, collection_id)
     if collection is None:
         raise HTTPException(status_code=404, detail="Collection not found")
@@ -201,6 +228,7 @@ def auto_review_preview(
         min_confidence=min_confidence,
         labels=parsed_labels,
         only_unreviewed=only_unreviewed,
+        include_blank_labels=include_blank_labels,
     )
     return AutoReviewPreviewResponse(count=len(candidate_ids))
 
@@ -225,9 +253,10 @@ def auto_review(
         min_confidence=body.min_confidence,
         labels=body.labels,
         only_unreviewed=body.only_unreviewed,
+        include_blank_labels=body.include_blank_labels,
     )
 
     for item_id in candidate_ids:
-        upsert_review(session, item_id, body.status)
+        upsert_review(session, item_id, body.status, reviewer_name=body.reviewer_name)
 
     return AutoReviewResponse(reviewed=len(candidate_ids))

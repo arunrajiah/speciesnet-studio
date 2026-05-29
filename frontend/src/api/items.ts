@@ -17,6 +17,8 @@ export function listItems(collectionId: number, filters?: ItemFilters): Promise<
   if (filters?.max_conf !== undefined) params.set('max_conf', String(filters.max_conf))
   if (filters?.status) params.set('status', filters.status)
   if (filters?.q) params.set('q', filters.q)
+  if (filters?.captured_after) params.set('captured_after', filters.captured_after)
+  if (filters?.captured_before) params.set('captured_before', filters.captured_before)
   const qs = params.toString()
   return apiFetch<ItemRead[]>(`/collections/${collectionId}/items${qs ? `?${qs}` : ''}`)
 }
@@ -80,12 +82,19 @@ export function importPredictions(
 
 export function autoReviewPreview(
   collectionId: number,
-  params: { min_confidence?: number; labels?: string[]; only_unreviewed?: boolean },
+  params: {
+    min_confidence?: number
+    labels?: string[]
+    only_unreviewed?: boolean
+    include_blank_labels?: boolean
+  },
 ): Promise<AutoReviewPreview> {
   const qs = new URLSearchParams()
   if (params.min_confidence !== undefined) qs.set('min_confidence', String(params.min_confidence))
   if (params.labels?.length) qs.set('labels', params.labels.join(','))
   if (params.only_unreviewed !== undefined) qs.set('only_unreviewed', String(params.only_unreviewed))
+  if (params.include_blank_labels !== undefined)
+    qs.set('include_blank_labels', String(params.include_blank_labels))
   return apiFetch<AutoReviewPreview>(
     `/collections/${collectionId}/auto-review/preview?${qs.toString()}`,
   )
@@ -98,6 +107,8 @@ export function runAutoReview(
     min_confidence?: number
     labels?: string[]
     only_unreviewed?: boolean
+    include_blank_labels?: boolean
+    reviewer_name?: string
   },
 ): Promise<{ reviewed: number }> {
   return apiFetch<{ reviewed: number }>(`/collections/${collectionId}/auto-review`, {

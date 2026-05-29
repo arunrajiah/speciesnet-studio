@@ -31,10 +31,24 @@ interface FilterSidebarProps {
 
 export function FilterSidebar({ labels, filters, onChange }: FilterSidebarProps) {
   const hasActive =
-    filters.label || filters.status || filters.q || filters.min_conf !== undefined || filters.max_conf !== undefined
+    filters.label ||
+    filters.status ||
+    filters.q ||
+    filters.min_conf !== undefined ||
+    filters.max_conf !== undefined ||
+    filters.captured_after !== undefined ||
+    filters.captured_before !== undefined
 
   const clearAll = () =>
-    onChange({ label: undefined, status: undefined, q: undefined, min_conf: undefined, max_conf: undefined })
+    onChange({
+      label: undefined,
+      status: undefined,
+      q: undefined,
+      min_conf: undefined,
+      max_conf: undefined,
+      captured_after: undefined,
+      captured_before: undefined,
+    })
 
   const confRange: [number, number] = [
     filters.min_conf !== undefined ? Math.round(filters.min_conf * 100) : 0,
@@ -123,6 +137,35 @@ export function FilterSidebar({ labels, filters, onChange }: FilterSidebarProps)
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* date range */}
+      <div className="space-y-2">
+        <Label className="text-xs">Date captured</Label>
+        <div className="space-y-1.5">
+          <div className="space-y-0.5">
+            <span className="text-xs text-muted-foreground">From</span>
+            <Input
+              type="date"
+              value={filters.captured_after ?? ''}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                onChange({ captured_after: e.target.value || undefined })
+              }
+              className="h-8 text-xs"
+            />
+          </div>
+          <div className="space-y-0.5">
+            <span className="text-xs text-muted-foreground">To</span>
+            <Input
+              type="date"
+              value={filters.captured_before ?? ''}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                onChange({ captured_before: e.target.value || undefined })
+              }
+              className="h-8 text-xs"
+            />
+          </div>
+        </div>
       </div>
     </aside>
   )

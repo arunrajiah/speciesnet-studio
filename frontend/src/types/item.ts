@@ -54,6 +54,8 @@ export interface ItemFilters {
   max_conf?: number
   status?: ReviewStatus
   q?: string
+  captured_after?: string
+  captured_before?: string
 }
 
 export interface AutoReviewPreview {
