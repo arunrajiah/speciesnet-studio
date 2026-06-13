@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, ChevronDown, Flag, Pencil, X } from 'lucide-react'
+import { Check, ChevronDown, Flag, Loader2, Pencil, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { listLabels, submitReview } from '../api/items'
+import { useInatSearch } from '../hooks/useInatSearch'
 import { useReviewerName } from '../hooks/useReviewerName'
 import type { ReviewDetail } from '../types/item'
 import { Button } from '@/components/ui/button'
@@ -12,6 +13,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Textarea } from '@/components/ui/textarea'
@@ -42,11 +44,14 @@ export function ReviewControls({
   const [overrideLabel, setOverrideLabel] = useState(currentReview?.override_label ?? '')
   const [note, setNote] = useState(currentReview?.reviewer_note ?? '')
   const [comboOpen, setComboOpen] = useState(false)
+  const [search, setSearch] = useState('')
 
   const { data: labels = [] } = useQuery({
     queryKey: ['labels', collectionId],
     queryFn: () => listLabels(collectionId),
   })
+
+  const { taxa, isLoading: inatLoading } = useInatSearch(search)
 
   const reviewMutation = useMutation({
     mutationFn: (action: Action) =>
@@ -97,6 +102,17 @@ export function ReviewControls({
   }, [reviewMutation, onNext, onPrev])
 
   const status = currentReview?.status ?? 'unreviewed'
+
+  const selectLabel = (value: string) => {
+    setOverrideLabel(value)
+    setSearch('')
+    setComboOpen(false)
+  }
+
+  // Existing collection labels filtered by search term
+  const filteredLabels = search
+    ? labels.filter((l) => l.toLowerCase().includes(search.toLowerCase()))
+    : labels
 
   return (
     <div className="space-y-3">
@@ -149,33 +165,73 @@ export function ReviewControls({
         </Button>
       </div>
 
-      {/* override label picker */}
-      <Popover open={comboOpen} onOpenChange={setComboOpen}>
+      {/* override label picker — collection labels + live iNaturalist suggestions */}
+      <Popover open={comboOpen} onOpenChange={(o) => { setComboOpen(o); if (!o) setSearch('') }}>
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="w-full justify-between text-sm">
             {overrideLabel || topLabel || 'Select override label…'}
             <ChevronDown className="ml-1 h-3 w-3 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-64 p-0">
-          <Command>
-            <CommandInput placeholder="Search labels…" />
+        <PopoverContent className="w-72 p-0">
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder="Search labels or species…"
+              value={search}
+              onValueChange={setSearch}
+            />
             <CommandList>
-              <CommandEmpty>No labels found.</CommandEmpty>
-              <CommandGroup>
-                {labels.map((l) => (
-                  <CommandItem
-                    key={l}
-                    value={l}
-                    onSelect={(v) => {
-                      setOverrideLabel(v)
-                      setComboOpen(false)
-                    }}
+              {filteredLabels.length === 0 && taxa.length === 0 && !inatLoading && (
+                <CommandEmpty>No results.</CommandEmpty>
+              )}
+
+              {filteredLabels.length > 0 && (
+                <CommandGroup heading="Collection labels">
+                  {filteredLabels.map((l) => (
+                    <CommandItem key={l} value={l} onSelect={selectLabel}>
+                      {l}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+
+              {(taxa.length > 0 || inatLoading) && (
+                <>
+                  {filteredLabels.length > 0 && <CommandSeparator />}
+                  <CommandGroup
+                    heading={
+                      inatLoading ? (
+                        <span className="flex items-center gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          iNaturalist…
+                        </span>
+                      ) : (
+                        'iNaturalist species'
+                      )
+                    }
                   >
-                    {l}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
+                    {taxa.map((t) => {
+                      const display = t.commonName
+                        ? `${t.commonName} (${t.scientificName})`
+                        : t.scientificName
+                      return (
+                        <CommandItem
+                          key={t.id}
+                          value={display}
+                          onSelect={() => selectLabel(t.commonName ?? t.scientificName)}
+                        >
+                          <span className="font-medium">{t.commonName ?? t.scientificName}</span>
+                          {t.commonName && (
+                            <span className="ml-1.5 text-xs italic text-muted-foreground">
+                              {t.scientificName}
+                            </span>
+                          )}
+                        </CommandItem>
+                      )
+                    })}
+                  </CommandGroup>
+                </>
+              )}
             </CommandList>
           </Command>
         </PopoverContent>
