@@ -14,18 +14,16 @@ const DEBOUNCE_MS = 350
 export function useInatSearch(query: string): { taxa: InatTaxon[]; isLoading: boolean } {
   const [taxa, setTaxa] = useState<InatTaxon[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const trimmed = query.trim()
+  const canSearch = trimmed.length >= MIN_CHARS
 
   useEffect(() => {
-    const trimmed = query.trim()
-    if (trimmed.length < MIN_CHARS) {
-      setTaxa([])
+    if (!canSearch) {
       return
     }
 
     const controller = new AbortController()
-    let timer: ReturnType<typeof setTimeout>
-
-    timer = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       setIsLoading(true)
       try {
         const url = `${INAT_API}?q=${encodeURIComponent(trimmed)}&per_page=6&rank=species,genus,family`
@@ -58,7 +56,7 @@ export function useInatSearch(query: string): { taxa: InatTaxon[]; isLoading: bo
       clearTimeout(timer)
       controller.abort()
     }
-  }, [query])
+  }, [canSearch, trimmed])
 
-  return { taxa, isLoading }
+  return { taxa: canSearch ? taxa : [], isLoading: canSearch ? isLoading : false }
 }

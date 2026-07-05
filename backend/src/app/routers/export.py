@@ -35,9 +35,7 @@ def export_collection(
         media_type = "text/csv"
         filename = f"collection_{collection_id}.csv"
     elif format == "wi-csv":
-        content = export_wildlife_insights(
-            session, collection_id, project_name=collection.name
-        )
+        content = export_wildlife_insights(session, collection_id, project_name=collection.name)
         media_type = "text/csv"
         filename = f"collection_{collection_id}_wildlife_insights.csv"
     else:

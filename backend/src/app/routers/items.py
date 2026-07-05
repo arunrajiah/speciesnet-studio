@@ -327,14 +327,10 @@ def batch_review(
 
     # Validate all IDs exist in a single query instead of N individual lookups
     if item_ids:
-        found_ids = set(
-            session.exec(select(col(Item.id)).where(col(Item.id).in_(item_ids))).all()
-        )
+        found_ids = set(session.exec(select(col(Item.id)).where(col(Item.id).in_(item_ids))).all())
         missing = set(item_ids) - found_ids
         if missing:
-            raise HTTPException(
-                status_code=404, detail=f"Items not found: {sorted(missing)}"
-            )
+            raise HTTPException(status_code=404, detail=f"Items not found: {sorted(missing)}")
 
     updated = 0
     for item_id in item_ids:

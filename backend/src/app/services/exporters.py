@@ -142,7 +142,7 @@ def export_wildlife_insights(session: Session, collection_id: int, project_name:
 
         label = top_pred.label if top_pred else None
         # Use override label if the reviewer corrected it
-        effective_label = (review.override_label if review and review.override_label else label)
+        effective_label = review.override_label if review and review.override_label else label
 
         is_blank = effective_label in _BLANK_LABELS if effective_label else True
         is_human = effective_label == "human" if effective_label else False
