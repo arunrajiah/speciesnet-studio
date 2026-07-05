@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="SpeciesNet Studio product cover">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#052E16"/>
+      <stop offset="100%" stop-color="#14532D"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#16A34A" stop-opacity="0.42"/>
+      <stop offset="100%" stop-color="#A16207" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="950" cy="100" r="280" fill="url(#glow)"/>
+  <circle cx="1100" cy="500" r="150" fill="#A16207" fill-opacity="0.08"/>
+  <circle cx="80" cy="550" r="200" fill="#16A34A" fill-opacity="0.06"/>
+  <line x1="0" y1="210" x2="1200" y2="210" stroke="white" stroke-opacity="0.04" stroke-width="1"/>
+  <line x1="0" y1="420" x2="1200" y2="420" stroke="white" stroke-opacity="0.04" stroke-width="1"/>
+  <line x1="400" y1="0" x2="400" y2="630" stroke="white" stroke-opacity="0.04" stroke-width="1"/>
+  <line x1="800" y1="0" x2="800" y2="630" stroke="white" stroke-opacity="0.04" stroke-width="1"/>
+  <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NiA5NiIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJTcGVjaWVzTmV0IFN0dWRpbyBsb2dvIj4KICA8ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIxMiIgeTE9IjEyIiB4Mj0iODQiIHkyPSI4NCIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPjxzdG9wIHN0b3AtY29sb3I9IiMxNTgwM0QiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNBMTYyMDciLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz4KICA8cmVjdCB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHJ4PSIyMiIgZmlsbD0idXJsKCNnKSIvPgogIDxwYXRoIGQ9Ik0yOCA2NWM0LTI0IDE1LTM3IDM5LTM0LTMgMjMtMTYgMzYtMzkgMzRaIiBmaWxsPSIjZmZmIi8+CiAgPHBhdGggZD0iTTM1IDU5YzEwLTQgMTktMTEgMjctMjIiIHN0cm9rZT0iIzE1ODAzRCIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8Y2lyY2xlIGN4PSI2MCIgY3k9IjM2IiByPSI0IiBmaWxsPSIjQTE2MjA3Ii8+Cjwvc3ZnPgo=" x="92" y="240" width="150" height="150" filter="url(#shadow)"/>
+  <rect x="260" y="155" width="174" height="34" rx="17" fill="#16A34A" fill-opacity="0.5" stroke="#16A34A" stroke-width="1"/>
+  <text x="347" y="178" font-size="15" font-family="Inter,system-ui,-apple-system,Segoe UI,sans-serif" font-weight="600" fill="#BBF7D0" text-anchor="middle">Conservation</text>
+  <text x="260" y="270" font-size="68" font-family="Inter,system-ui,-apple-system,Segoe UI,sans-serif" font-weight="800" fill="white" letter-spacing="-3">SpeciesNet Studio</text>
+  <text x="262" y="330" font-size="28" font-family="Inter,system-ui,-apple-system,Segoe UI,sans-serif" font-weight="400" fill="#BBF7D0">Self-hosted review UI for SpeciesNet wildlife predictions</text>
+  <line x1="262" y1="370" x2="980" y2="370" stroke="white" stroke-opacity="0.12" stroke-width="1"/>
+  <rect x="262" y="390" width="135" height="36" rx="8" fill="white" fill-opacity="0.08" stroke="white" stroke-opacity="0.15" stroke-width="1"/>
+  <text x="329.5" y="413" font-size="15" font-family="Inter,system-ui,-apple-system,Segoe UI,sans-serif" fill="white" fill-opacity="0.8" text-anchor="middle">Review grid</text>
+  <rect x="411" y="390" width="135" height="36" rx="8" fill="white" fill-opacity="0.08" stroke="white" stroke-opacity="0.15" stroke-width="1"/>
+  <text x="478.5" y="413" font-size="15" font-family="Inter,system-ui,-apple-system,Segoe UI,sans-serif" fill="white" fill-opacity="0.8" text-anchor="middle">Corrections</text>
+  <rect x="560" y="390" width="116" height="36" rx="8" fill="white" fill-opacity="0.08" stroke="white" stroke-opacity="0.15" stroke-width="1"/>
+  <text x="618" y="413" font-size="15" font-family="Inter,system-ui,-apple-system,Segoe UI,sans-serif" fill="white" fill-opacity="0.8" text-anchor="middle">Export</text>
+  <rect x="262" y="450" width="162" height="44" rx="10" fill="#16A34A"/>
+  <text x="343" y="477" font-size="22" font-family="Inter,system-ui,-apple-system,Segoe UI,sans-serif" font-weight="700" fill="white" text-anchor="middle">Open source</text>
+  <text x="1140" y="600" font-size="18" font-family="Inter,system-ui,-apple-system,Segoe UI,sans-serif" fill="white" fill-opacity="0.35" text-anchor="end">hub.arunrajiah.com</text>
+</svg>
