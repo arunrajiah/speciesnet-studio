@@ -35,3 +35,9 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Local AI assistant / OS / env files
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.mcp.json
