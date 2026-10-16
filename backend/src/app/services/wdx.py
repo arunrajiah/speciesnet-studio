@@ -96,11 +96,14 @@ def _offset(opt: WdxOptions) -> timezone:
 
 
 def build_events(
-    session: Session, collection_id: int, opt: WdxOptions
+    session: Session, collection_id: int, opt: WdxOptions, item_ids: list[int] | None = None
 ) -> tuple[list[dict[str, object]], dict[str, int]]:
     """WDX events for a collection, plus counts of what was skipped and why."""
     col = session.get(Collection, collection_id)
-    items = list(session.exec(select(Item).where(Item.collection_id == collection_id)).all())
+    query = select(Item).where(Item.collection_id == collection_id)
+    if item_ids is not None:
+        query = query.where(Item.id.in_(item_ids))  # type: ignore[union-attr]
+    items = list(session.exec(query).all())
     skipped = {
         "no_prediction": 0,
         "not_wildlife": 0,
@@ -240,3 +243,57 @@ def send(
             counts[k] += int(res.get(k, 0))
         details.extend(res.get("rejectedDetails", [])[: max(0, 20 - len(details))])
     return {**counts, "rejectedDetails": details}
+
+
+def auto_send_items(session: Session, item_ids: list[int]) -> dict[str, object] | None:
+    """Send just-reviewed items with the saved settings, when automatic sending is on.
+
+    Returns None when it is off or not set up. The outcome is saved for the Export dialog.
+    """
+    from app.services import settings as saved
+
+    cfg = saved.load(session)
+    if not (cfg.auto_send and cfg.api_key) or not item_ids:
+        return None
+    opt = WdxOptions(
+        latitude=cfg.latitude,
+        longitude=cfg.longitude,
+        round_coords=cfg.round_coords,
+        utc_offset=cfg.utc_offset,
+        reviewed_only=True,
+    )
+    by_collection: dict[int, list[int]] = {}
+    for item in session.exec(select(Item).where(Item.id.in_(item_ids))).all():  # type: ignore[union-attr]
+        by_collection.setdefault(item.collection_id, []).append(item.id)  # type: ignore[arg-type]
+    events: list[dict[str, object]] = []
+    for collection_id, ids in by_collection.items():
+        events += build_events(session, collection_id, opt, ids)[0]
+    try:
+        result: dict[str, object] = (
+            send(events, cfg.endpoint, cfg.api_key) if events else {"received": 0}
+        )
+        cfg.last_send_result = f"sent {len(events)}, accepted {result.get('received', 0)}"
+    except (urllib.error.URLError, TimeoutError, ValueError) as e:
+        result = {"error": str(e)}
+        cfg.last_send_result = f"failed: {e}"[:200]
+    cfg.last_send_at = datetime.now(UTC).isoformat(timespec="seconds")
+    saved.save(session, cfg)
+    return result
+
+
+def schedule_auto_send(session: Session, item_ids: list[int]) -> None:
+    """After a review is saved: send in a background thread, so reviewing never waits."""
+    from app.services import settings as saved
+
+    cfg = saved.load(session)
+    if not (cfg.auto_send and cfg.api_key) or not item_ids:
+        return
+    import threading
+
+    from app.db import engine
+
+    def run() -> None:
+        with Session(engine) as s:
+            auto_send_items(s, item_ids)
+
+    threading.Thread(target=run, daemon=True).start()

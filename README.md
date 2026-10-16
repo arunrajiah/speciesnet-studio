@@ -128,9 +128,10 @@ Studio is where camera-trap results get checked by a person before anyone relies
 
 1. Register the camera at [wildnetwork.arunrajiah.com/contribute](https://wildnetwork.arunrajiah.com/contribute) with source `speciesnet-studio` to get an API key.
 2. Enter the camera's location (used for images without GPS) and its clock offset from UTC, for example `+05:30`.
-3. Paste the key and press **Send to WildNetwork**, or download the `.wdx.ndjson` file instead.
+3. Paste the key and press **Send to WildNetwork**, or download the `.wdx.ndjson` file instead. With **Remember** ticked (the default), the key, location and clock offset are saved, so later sends are one click.
+4. Optional: tick **Send each review to WildNetwork automatically**. From then on every confirm, correction or flag is sent as you review, in the background, using the saved settings. The last automatic send and its result are shown in the same tab.
 
-What is sent, per image: the species (your override if you changed it), the time, the location rounded to about 1 km, the model's confidence, the bounding box, and your review decision (confirmed, or flagged as uncertain). Blank, human and vehicle images are never sent, and by default neither are images nobody has reviewed. Images themselves are never uploaded. Sending again updates the same records, so a later review round replaces earlier decisions. The key is used for that one request and never stored.
+What is sent, per image: the species (your override if you changed it), the time, the location rounded to about 1 km, the model's confidence, the bounding box, and your review decision (confirmed, or flagged as uncertain). Blank, human and vehicle images are never sent, and by default neither are images nobody has reviewed. Images themselves are never uploaded. Sending again updates the same records, so a later review round replaces earlier decisions. A remembered key is kept only in this Studio's own database and is never returned by its API.
 
 If the same camera is also connected through wdx-agent, send it one way only: wdx-agent sends unreviewed predictions automatically, Studio sends reviewed ones.
 

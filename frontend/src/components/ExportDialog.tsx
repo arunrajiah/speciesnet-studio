@@ -1,7 +1,9 @@
 import { Download, Send } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ExportFormat, SendResult } from '../api/export'
 import { sendToWildNetwork, triggerDownload } from '../api/export'
+import type { WildNetworkSettings } from '../api/settings'
+import { getWildNetworkSettings, saveWildNetworkSettings } from '../api/settings'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -30,6 +32,30 @@ export function ExportDialog({ collectionId, collectionName }: ExportDialogProps
   const [reviewedOnly, setReviewedOnly] = useState(true)
   const [apiKey, setApiKey] = useState('')
   const [sent, setSent] = useState<SendResult | null>(null)
+  const [saved, setSaved] = useState<WildNetworkSettings | null>(null)
+  const [remember, setRemember] = useState(true)
+
+  // Saved defaults fill the form, so sending is one click after the first time.
+  useEffect(() => {
+    if (!open) return
+    getWildNetworkSettings()
+      .then((s) => {
+        setSaved(s)
+        if (s.latitude !== null) setLat(String(s.latitude))
+        if (s.longitude !== null) setLon(String(s.longitude))
+        if (s.utc_offset) setUtcOffset(s.utc_offset)
+      })
+      .catch(() => setSaved(null))
+  }, [open])
+
+  const toggleAutoSend = async (on: boolean) => {
+    setError(null)
+    try {
+      setSaved(await saveWildNetworkSettings({ auto_send: on }))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not save')
+    }
+  }
 
   const wdxParams = () => ({
     latitude: lat.trim() ? Number(lat) : undefined,
@@ -43,6 +69,18 @@ export function ExportDialog({ collectionId, collectionName }: ExportDialogProps
     setError(null)
     setSent(null)
     try {
+      if (remember) {
+        const p = wdxParams()
+        setSaved(
+          await saveWildNetworkSettings({
+            ...(apiKey.trim() ? { api_key: apiKey.trim() } : {}),
+            latitude: p.latitude ?? null,
+            longitude: p.longitude ?? null,
+            utc_offset: p.utcOffset ?? null,
+          }),
+        )
+        setApiKey('')
+      }
       setSent(await sendToWildNetwork(collectionId, apiKey.trim(), wdxParams()))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Send failed')
@@ -74,13 +112,13 @@ export function ExportDialog({ collectionId, collectionName }: ExportDialogProps
           Export
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Export "{collectionName}"</DialogTitle>
         </DialogHeader>
 
         <Tabs value={format} onValueChange={(v) => setFormat(v as ExportFormat)}>
-          <TabsList className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="csv" className="flex-1">CSV</TabsTrigger>
             <TabsTrigger value="json" className="flex-1">JSON</TabsTrigger>
             <TabsTrigger value="wi-csv" className="flex-1">Wildlife Insights</TabsTrigger>
@@ -127,7 +165,7 @@ export function ExportDialog({ collectionId, collectionName }: ExportDialogProps
               format: species, time, location rounded to about 1 km, confidence, the box, and your review decision. Blank,
               human and vehicle images are never included.
             </p>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+            <div className="mt-3 grid min-w-0 grid-cols-2 gap-2 text-sm">
               <label className="flex flex-col gap-1">
                 Latitude (images without GPS)
                 <input value={lat} onChange={(e) => setLat(e.target.value)} inputMode="decimal" placeholder="11.58" className="rounded-md border px-2 py-1" />
@@ -145,12 +183,36 @@ export function ExportDialog({ collectionId, collectionName }: ExportDialogProps
                 Reviewed images only
               </label>
               <label className="col-span-2 flex flex-col gap-1">
-                WildNetwork API key (to send directly; not stored)
-                <input value={apiKey} onChange={(e) => setApiKey(e.target.value)} type="password" autoComplete="off" placeholder="wn_..." className="rounded-md border px-2 py-1" />
+                {saved?.has_api_key ? 'WildNetwork API key (saved; type a new one to replace it)' : 'WildNetwork API key'}
+                <input value={apiKey} onChange={(e) => setApiKey(e.target.value)} type="password" autoComplete="off" placeholder={saved?.has_api_key ? 'Saved key in use' : 'wn_...'} className="rounded-md border px-2 py-1" />
+              </label>
+              <label className="col-span-2 flex items-center gap-2">
+                <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+                Remember the key and location for next time
+              </label>
+              <label className="col-span-2 flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={saved?.auto_send ?? false}
+                  disabled={!saved?.has_api_key}
+                  onChange={(e) => void toggleAutoSend(e.target.checked)}
+                />
+                <span>
+                  Send each review to WildNetwork automatically
+                  <span className="block text-xs text-muted-foreground">
+                    {saved?.has_api_key
+                      ? saved.last_send_at
+                        ? `Last automatic send ${new Date(saved.last_send_at).toLocaleString()}: ${saved.last_send_result}`
+                        : 'Every confirm, correction or flag is sent as you review, using the saved key and location.'
+                      : 'Save a key first (send once with "Remember" ticked).'}
+                  </span>
+                </span>
               </label>
               <p className="col-span-2 text-xs text-muted-foreground">
-                Get a key by registering this camera at wildnetwork.arunrajiah.com/contribute (source: speciesnet-studio). Sending
-                again updates the same records, so later review decisions replace earlier ones.
+                Get a key by registering this camera at wildnetwork.arunrajiah.com/contribute (source: speciesnet-studio). The key
+                is kept only in this Studio's own database. Sending again updates the same records, so later review decisions
+                replace earlier ones.
               </p>
             </div>
             {sent && (
@@ -170,7 +232,7 @@ export function ExportDialog({ collectionId, collectionName }: ExportDialogProps
             Cancel
           </Button>
           {format === 'wdx' && (
-            <Button variant="secondary" onClick={handleSend} disabled={loading || !apiKey.trim()}>
+            <Button variant="secondary" onClick={handleSend} disabled={loading || (!apiKey.trim() && !saved?.has_api_key)}>
               <Send className="mr-2 h-4 w-4" aria-hidden="true" />
               {loading ? 'Sending…' : 'Send to WildNetwork'}
             </Button>

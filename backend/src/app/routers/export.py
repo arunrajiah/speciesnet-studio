@@ -8,6 +8,7 @@ from sqlmodel import Session
 
 from app.db import get_session
 from app.models.collection import Collection
+from app.services import settings as saved
 from app.services.exporters import export_csv, export_json, export_wildlife_insights
 from app.services.wdx import WdxOptions, build_events, send, to_ndjson
 
@@ -98,11 +99,13 @@ def _options(
 
 
 class SendRequest(BaseModel):
-    api_key: str
-    endpoint: str = "https://wildnetwork.arunrajiah.com/api/v1/events"
+    """Fields left out use the saved WildNetwork settings (Settings > WildNetwork)."""
+
+    api_key: str | None = None
+    endpoint: str | None = None
     latitude: float | None = None
     longitude: float | None = None
-    round_coords: int = 2
+    round_coords: int | None = None
     utc_offset: str | None = None
     reviewed_only: bool = True
 
@@ -113,22 +116,32 @@ def send_collection(
 ) -> dict[str, object]:
     """Send a collection's results to WildNetwork (or another WDX endpoint) as WDX events.
 
-    The API key is used for this request only and never stored. Sending again updates the same
-    events (stable ids),
-    so a later review round replaces earlier decisions.
+    Sending again updates the same events (stable ids), so a later review round replaces
+    earlier decisions.
     """
     if session.get(Collection, collection_id) is None:
         raise HTTPException(status_code=404, detail="Collection not found")
-    if not body.endpoint.startswith(("https://", "http://localhost", "http://127.0.0.1")):
+    cfg = saved.load(session)
+    api_key = (body.api_key or "").strip() or cfg.api_key
+    endpoint = body.endpoint or cfg.endpoint
+    if not api_key:
+        raise HTTPException(
+            status_code=400, detail="No WildNetwork API key: add one in the WildNetwork tab"
+        )
+    if not endpoint.startswith(("https://", "http://localhost", "http://127.0.0.1")):
         raise HTTPException(status_code=400, detail="endpoint must be https")
     opt = _options(
-        body.latitude, body.longitude, body.round_coords, body.utc_offset, body.reviewed_only
+        body.latitude if body.latitude is not None else cfg.latitude,
+        body.longitude if body.longitude is not None else cfg.longitude,
+        body.round_coords if body.round_coords is not None else cfg.round_coords,
+        body.utc_offset or cfg.utc_offset,
+        body.reviewed_only,
     )
     events, skipped = build_events(session, collection_id, opt)
     if not events:
         return {"sent": 0, "skipped": skipped, "result": None}
     try:
-        result = send(events, body.endpoint, body.api_key.strip())
+        result = send(events, endpoint, api_key)
     except urllib.error.HTTPError as e:
         detail = (
             "WildNetwork did not accept the API key"

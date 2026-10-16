@@ -11,6 +11,7 @@ from app.models.review import ReviewRecord, ReviewStatus
 from app.repositories.collections import get_collection
 from app.repositories.reviews import upsert_review
 from app.services.results_parser import parse_predictions_json, persist_predictions
+from app.services.wdx import schedule_auto_send
 
 router = APIRouter(prefix="/api", tags=["auto-review"])
 
@@ -259,4 +260,5 @@ def auto_review(
     for item_id in candidate_ids:
         upsert_review(session, item_id, body.status, reviewer_name=body.reviewer_name)
 
+    schedule_auto_send(session, list(candidate_ids))
     return AutoReviewResponse(reviewed=len(candidate_ids))

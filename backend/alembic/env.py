@@ -15,6 +15,7 @@ import app.models.item  # noqa: F401
 import app.models.job  # noqa: F401
 import app.models.prediction  # noqa: F401
 import app.models.review  # noqa: F401
+import app.models.setting  # noqa: F401
 from alembic import context
 
 config = context.config
