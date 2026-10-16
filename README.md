@@ -53,8 +53,8 @@ Camera trap programs routinely produce millions of images per season. Google's S
 - Filter state synced to URL (bookmarkable, shareable)
 
 ### Export
-- Download results as **CSV** or **JSON** per collection
-- Partner export format stubs (Wildlife Insights, iNaturalist) — PRs welcome
+- Download results as **CSV**, **JSON** or a **Wildlife Insights** CSV per collection
+- **Share with WildNetwork:** export reviewed results as [WDX](https://github.com/arunrajiah/wildlife-detection-exchange) events, or send them straight to the open [WildNetwork](https://wildnetwork.arunrajiah.com) map from the Export dialog (see [Sharing with WildNetwork](#sharing-with-wildnetwork))
 
 ---
 
@@ -120,7 +120,19 @@ Implement the `InferenceAdapter` protocol (see [`backend/src/app/adapters/base.p
 
 ## Data privacy
 
-Nothing leaves your machine. Your images and predictions stay on your disk. Studio makes no network calls during normal operation — the only exception is that SpeciesNet downloads its model weights from Kaggle/HuggingFace on first run (this is SpeciesNet's own behaviour, not Studio's).
+Nothing leaves your machine unless you choose to share. Your images and predictions stay on your disk. Studio makes no network calls during normal operation. The exceptions: SpeciesNet downloads its model weights from Kaggle/HuggingFace on first run (SpeciesNet's own behaviour), and **Send to WildNetwork** posts the records you choose, never the images.
+
+## Sharing with WildNetwork
+
+Studio is where camera-trap results get checked by a person before anyone relies on them. Once a collection is reviewed, open **Export > WildNetwork**:
+
+1. Register the camera at [wildnetwork.arunrajiah.com/contribute](https://wildnetwork.arunrajiah.com/contribute) with source `speciesnet-studio` to get an API key.
+2. Enter the camera's location (used for images without GPS) and its clock offset from UTC, for example `+05:30`.
+3. Paste the key and press **Send to WildNetwork**, or download the `.wdx.ndjson` file instead.
+
+What is sent, per image: the species (your override if you changed it), the time, the location rounded to about 1 km, the model's confidence, the bounding box, and your review decision (confirmed, or flagged as uncertain). Blank, human and vehicle images are never sent, and by default neither are images nobody has reviewed. Images themselves are never uploaded. Sending again updates the same records, so a later review round replaces earlier decisions. The key is used for that one request and never stored.
+
+If the same camera is also connected through wdx-agent, send it one way only: wdx-agent sends unreviewed predictions automatically, Studio sends reviewed ones.
 
 ---
 
@@ -136,12 +148,12 @@ Eight open source projects for listening to, identifying and mapping wildlife. T
 | Follow your own station on your phone | [BirdEcho](https://github.com/arunrajiah/birdecho) | Android app for BirdNET-Pi, BirdNET-Go and BirdWeather stations |
 | Identify a sound you just heard | [WildEcho](https://github.com/arunrajiah/wildecho) | Phone app: record a clip, get ranked species |
 | Run your own sound identification server | [wildecho-api](https://github.com/arunrajiah/wildecho-api) | Self-hosted species identification from audio, on CPU, no API keys |
-| Check camera trap predictions before you use them | [SpeciesNet Studio](https://github.com/arunrajiah/speciesnet-studio) (this project) | Self-hosted review of SpeciesNet results |
+| Check camera trap predictions before you use them | [SpeciesNet Studio](https://github.com/arunrajiah/speciesnet-studio) (this project) | Self-hosted review of SpeciesNet results, then send them to WildNetwork |
 | Make your own software or device produce or read detections in a common format | [WDX](https://github.com/arunrajiah/wildlife-detection-exchange) | The open format for one AI wildlife detection; maps to Darwin Core |
 
-**How this one fits.** SpeciesNet Studio is where camera trap predictions are checked before they are shared.
+**How this one fits.** SpeciesNet Studio is where camera trap predictions are checked by a person, then sent to WildNetwork with the review decision.
 
-**How they connect:** stations (a WildNetwork Base, BirdNET-Pi, BirdNET-Go, camera traps) produce detections; wdx-agent sends them in the WDX format; WildNetwork maps them. Connected today: wdx-agent and the WildNetwork Base send to WildNetwork, and WildEcho uses wildecho-api. Planned: Base setup in BirdEcho, and WDX export from wildecho-api and SpeciesNet Studio.
+**How they connect:** stations (a WildNetwork Base, BirdNET-Pi, BirdNET-Go, camera traps) produce detections; wdx-agent sends them in the WDX format, SpeciesNet Studio adds a human check for camera traps, and WildNetwork maps them. Connected today: wdx-agent, the WildNetwork Base and SpeciesNet Studio send to WildNetwork, BirdEcho shows WildNetwork arrivals near your station, and WildEcho uses wildecho-api. Planned: Base setup in BirdEcho, and sending WildEcho identifications to WildNetwork.
 
 ## Contributing
 
