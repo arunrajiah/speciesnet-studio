@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- WDX export (`format=wdx`, NDJSON) and **Send to WildNetwork** (`POST /api/collections/{id}/send-wdx`): reviewed results go to the open WildNetwork map with the review decision, the bounding box and the model pipeline. Blank, human and vehicle images are never included; locations are rounded to about 1 km; the API key is never stored.
+
 ## [0.3.0] — 2026-05-01
 
 ### Added
