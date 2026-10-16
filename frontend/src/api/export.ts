@@ -42,13 +42,13 @@ export interface SendResult {
   result: { received: number; inserted: number; updated: number; rejected: number } | null
 }
 
-/** Sends the collection to WildNetwork as WDX. The key is used for this request only; Studio never stores it. */
+/** Sends the collection to WildNetwork as WDX. An empty key means: use the key saved in Studio's settings. */
 export async function sendToWildNetwork(collectionId: number, apiKey: string, wdx: WdxParams): Promise<SendResult> {
   const res = await fetch(`/api/collections/${collectionId}/send-wdx`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
-      api_key: apiKey,
+      api_key: apiKey || undefined,
       latitude: wdx.latitude,
       longitude: wdx.longitude,
       utc_offset: wdx.utcOffset || undefined,

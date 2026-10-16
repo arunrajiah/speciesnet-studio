@@ -10,6 +10,7 @@ from app.models.item import Item
 from app.models.prediction import Prediction
 from app.models.review import ReviewRecord, ReviewStatus
 from app.repositories.reviews import upsert_review
+from app.services.wdx import schedule_auto_send
 
 router = APIRouter(prefix="/api", tags=["items"])
 
@@ -344,6 +345,7 @@ def batch_review(
         )
         updated += 1
 
+    schedule_auto_send(session, item_ids)
     return {"updated": updated}
 
 
@@ -392,6 +394,7 @@ def submit_review(
         reviewer_note=reviewer_note,
         reviewer_name=reviewer_name,
     )
+    schedule_auto_send(session, [item_id])
     return {
         "id": record.id,
         "item_id": record.item_id,

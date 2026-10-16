@@ -12,6 +12,7 @@ from .routers import export as export_router
 from .routers import inference as inference_router
 from .routers import items as items_router
 from .routers import sample as sample_router
+from .routers import settings as settings_router
 from .routers import stats as stats_router
 
 THUMBS_DIR = os.environ.get("THUMBS_DIR", "./data/thumbs")
@@ -47,6 +48,7 @@ def create_app() -> FastAPI:
     application.include_router(items_router.router)
     application.include_router(sample_router.router)
     application.include_router(stats_router.router)
+    application.include_router(settings_router.router)
     application.include_router(auto_review_router.router)
 
     # Serve thumbnails and full-res images as static files

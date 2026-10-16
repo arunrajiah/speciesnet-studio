@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Saved WildNetwork settings (`GET`/`PUT /api/settings/wildnetwork`): the key, location and clock offset are remembered, so sending is one click; the key is never returned by the API.
+- Automatic sending: when switched on, every review decision (single, batch or auto-approve) is sent to WildNetwork in the background with the saved settings.
 - WDX export (`format=wdx`, NDJSON) and **Send to WildNetwork** (`POST /api/collections/{id}/send-wdx`): reviewed results go to the open WildNetwork map with the review decision, the bounding box and the model pipeline. Blank, human and vehicle images are never included; locations are rounded to about 1 km; the API key is never stored.
 
 ## [0.3.0] — 2026-05-01
