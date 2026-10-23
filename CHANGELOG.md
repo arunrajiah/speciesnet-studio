@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- WildNetwork is now Wildlife Network, at wlnw.org: the Export tab, messages and default upload address use the new name and domain. Saved settings that point at the old address move to the new one automatically (the old address still accepts uploads).
+
 ### Added
 - Saved WildNetwork settings (`GET`/`PUT /api/settings/wildnetwork`): the key, location and clock offset are remembered, so sending is one click; the key is never returned by the API.
 - Automatic sending: when switched on, every review decision (single, batch or auto-approve) is sent to WildNetwork in the background with the saved settings.

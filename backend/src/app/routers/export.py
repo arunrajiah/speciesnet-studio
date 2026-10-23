@@ -32,7 +32,7 @@ def export_collection(
     - ``csv`` — all fields, spreadsheet-compatible
     - ``json`` — same fields as CSV, as a JSON array
     - ``wi-csv`` — Wildlife Insights-compatible CSV
-    - ``wdx`` — WDX 0.2 events as NDJSON, for WildNetwork or any WDX endpoint.
+    - ``wdx`` — WDX 0.2 events as NDJSON, for Wildlife Network or any WDX endpoint.
       ``latitude``/``longitude`` are used for images without GPS; ``reviewed_only``
       (default true) leaves out images nobody has reviewed.
     """
@@ -99,7 +99,7 @@ def _options(
 
 
 class SendRequest(BaseModel):
-    """Fields left out use the saved WildNetwork settings (Settings > WildNetwork)."""
+    """Fields left out use the saved Wildlife Network settings (Settings > Wildlife Network)."""
 
     api_key: str | None = None
     endpoint: str | None = None
@@ -114,7 +114,7 @@ class SendRequest(BaseModel):
 def send_collection(
     collection_id: int, body: SendRequest, session: Session = Depends(get_session)
 ) -> dict[str, object]:
-    """Send a collection's results to WildNetwork (or another WDX endpoint) as WDX events.
+    """Send a collection's results to Wildlife Network (or another WDX endpoint) as WDX events.
 
     Sending again updates the same events (stable ids), so a later review round replaces
     earlier decisions.
@@ -126,7 +126,8 @@ def send_collection(
     endpoint = body.endpoint or cfg.endpoint
     if not api_key:
         raise HTTPException(
-            status_code=400, detail="No WildNetwork API key: add one in the WildNetwork tab"
+            status_code=400,
+            detail="No Wildlife Network API key: add one in the Wildlife Network tab",
         )
     if not endpoint.startswith(("https://", "http://localhost", "http://127.0.0.1")):
         raise HTTPException(status_code=400, detail="endpoint must be https")
@@ -144,7 +145,7 @@ def send_collection(
         result = send(events, endpoint, api_key)
     except urllib.error.HTTPError as e:
         detail = (
-            "WildNetwork did not accept the API key"
+            "Wildlife Network did not accept the API key"
             if e.code == 401
             else f"endpoint answered HTTP {e.code}"
         )

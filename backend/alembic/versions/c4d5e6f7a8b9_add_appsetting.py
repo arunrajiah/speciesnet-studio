@@ -20,7 +20,7 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    """Saved settings (WildNetwork key, default location, automatic sending)."""
+    """Saved settings (Wildlife Network key, default location, automatic sending)."""
     op.create_table(
         "appsetting",
         sa.Column("key", sa.String(), nullable=False),

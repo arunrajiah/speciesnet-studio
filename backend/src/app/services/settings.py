@@ -1,4 +1,4 @@
-"""Saved WildNetwork settings, so sending needs no typing each time.
+"""Saved Wildlife Network settings, so sending needs no typing each time.
 
 Studio is self-hosted, so the key is kept in the local database next to the reviews.
 It is never returned by the
@@ -13,7 +13,10 @@ from sqlmodel import Session
 from app.models.setting import AppSetting
 
 KEY = "wildnetwork"
-DEFAULT_ENDPOINT = "https://wildnetwork.arunrajiah.com/api/v1/events"
+DEFAULT_ENDPOINT = "https://wlnw.org/api/v1/events"
+# Wildlife Network moved from this host on 2026-10-23. It still accepts uploads,
+# but saved settings move to the new one.
+OLD_ENDPOINT = "https://wildnetwork.arunrajiah.com/api/v1/events"
 
 
 @dataclass
@@ -35,7 +38,10 @@ def load(session: Session) -> WildNetworkSettings:
         return WildNetworkSettings()
     data = json.loads(row.value)
     known = WildNetworkSettings.__dataclass_fields__
-    return WildNetworkSettings(**{k: v for k, v in data.items() if k in known})
+    cfg = WildNetworkSettings(**{k: v for k, v in data.items() if k in known})
+    if cfg.endpoint == OLD_ENDPOINT:
+        cfg.endpoint = DEFAULT_ENDPOINT
+    return cfg
 
 
 def save(session: Session, s: WildNetworkSettings) -> None:

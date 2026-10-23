@@ -25,7 +25,7 @@ export function ExportDialog({ collectionId, collectionName }: ExportDialogProps
   const [format, setFormat] = useState<ExportFormat>('csv')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // WildNetwork (WDX) options. The API key lives only in this dialog's state.
+  // Wildlife Network (WDX) options. The API key lives only in this dialog's state.
   const [lat, setLat] = useState('')
   const [lon, setLon] = useState('')
   const [utcOffset, setUtcOffset] = useState('')
@@ -122,7 +122,7 @@ export function ExportDialog({ collectionId, collectionName }: ExportDialogProps
             <TabsTrigger value="csv" className="flex-1">CSV</TabsTrigger>
             <TabsTrigger value="json" className="flex-1">JSON</TabsTrigger>
             <TabsTrigger value="wi-csv" className="flex-1">Wildlife Insights</TabsTrigger>
-            <TabsTrigger value="wdx" className="flex-1">WildNetwork</TabsTrigger>
+            <TabsTrigger value="wdx" className="flex-1">Wildlife Network</TabsTrigger>
           </TabsList>
           <TabsContent value="csv">
             <p className="text-sm text-muted-foreground mt-2">
@@ -155,8 +155,8 @@ export function ExportDialog({ collectionId, collectionName }: ExportDialogProps
           <TabsContent value="wdx">
             <p className="text-sm text-muted-foreground mt-2">
               Shares your reviewed results with the open{' '}
-              <a href="https://wildnetwork.arunrajiah.com" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
-                WildNetwork
+              <a href="https://wlnw.org" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+                Wildlife Network
               </a>{' '}
               map in the{' '}
               <a href="https://github.com/arunrajiah/wildlife-detection-exchange" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
@@ -183,7 +183,7 @@ export function ExportDialog({ collectionId, collectionName }: ExportDialogProps
                 Reviewed images only
               </label>
               <label className="col-span-2 flex flex-col gap-1">
-                {saved?.has_api_key ? 'WildNetwork API key (saved; type a new one to replace it)' : 'WildNetwork API key'}
+                {saved?.has_api_key ? 'Wildlife Network API key (saved; type a new one to replace it)' : 'Wildlife Network API key'}
                 <input value={apiKey} onChange={(e) => setApiKey(e.target.value)} type="password" autoComplete="off" placeholder={saved?.has_api_key ? 'Saved key in use' : 'wn_...'} className="rounded-md border px-2 py-1" />
               </label>
               <label className="col-span-2 flex items-center gap-2">
@@ -199,7 +199,7 @@ export function ExportDialog({ collectionId, collectionName }: ExportDialogProps
                   onChange={(e) => void toggleAutoSend(e.target.checked)}
                 />
                 <span>
-                  Send each review to WildNetwork automatically
+                  Send each review to Wildlife Network automatically
                   <span className="block text-xs text-muted-foreground">
                     {saved?.has_api_key
                       ? saved.last_send_at
@@ -210,7 +210,7 @@ export function ExportDialog({ collectionId, collectionName }: ExportDialogProps
                 </span>
               </label>
               <p className="col-span-2 text-xs text-muted-foreground">
-                Get a key by registering this camera at wildnetwork.arunrajiah.com/contribute (source: speciesnet-studio). The key
+                Get a key by registering this camera at wlnw.org/contribute (source: speciesnet-studio). The key
                 is kept only in this Studio's own database. Sending again updates the same records, so later review decisions
                 replace earlier ones.
               </p>
@@ -234,7 +234,7 @@ export function ExportDialog({ collectionId, collectionName }: ExportDialogProps
           {format === 'wdx' && (
             <Button variant="secondary" onClick={handleSend} disabled={loading || (!apiKey.trim() && !saved?.has_api_key)}>
               <Send className="mr-2 h-4 w-4" aria-hidden="true" />
-              {loading ? 'Sending…' : 'Send to WildNetwork'}
+              {loading ? 'Sending…' : 'Send to Wildlife Network'}
             </Button>
           )}
           <Button onClick={handleExport} disabled={loading}>
