@@ -1,4 +1,4 @@
-"""WDX (Wildlife Detection Exchange) export, and sending reviewed results to WildNetwork.
+"""WDX (Wildlife Detection Exchange) export, and sending reviewed results to Wildlife Network.
 
 One WDX event per image: the reviewer's decision when there is one, otherwise the top
 prediction. Blank, human and
@@ -223,7 +223,7 @@ def to_ndjson(events: list[dict[str, object]]) -> str:
 def send(
     events: list[dict[str, object]], endpoint: str, api_key: str, timeout: float = 60
 ) -> dict[str, object]:
-    """POST events in batches to a WDX endpoint, e.g. WildNetwork's /api/v1/events."""
+    """POST events in batches to a WDX endpoint, e.g. Wildlife Network's /api/v1/events."""
     counts = {"received": 0, "inserted": 0, "updated": 0, "rejected": 0}
     details: list[object] = []
     for i in range(0, len(events), BATCH):

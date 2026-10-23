@@ -1,4 +1,4 @@
-"""Saved WildNetwork settings and automatic sending after a review."""
+"""Saved Wildlife Network settings and automatic sending after a review."""
 
 import json
 from collections.abc import Iterator
@@ -105,3 +105,9 @@ def test_auto_send_after_review(
     calls.clear()
     wdx.auto_send_items(s, [5, 6])
     assert calls == []
+
+
+def test_old_endpoint_moves_to_new_domain(client_and_session: tuple[TestClient, Session]) -> None:
+    _, s = client_and_session
+    saved.save(s, saved.WildNetworkSettings(api_key="wn_k", endpoint=saved.OLD_ENDPOINT))
+    assert saved.load(s).endpoint == "https://wlnw.org/api/v1/events"

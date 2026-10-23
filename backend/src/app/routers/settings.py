@@ -24,7 +24,7 @@ class WildNetworkUpdate(BaseModel):
 
 @router.get("/wildnetwork")
 def get_wildnetwork(session: Session = Depends(get_session)) -> dict[str, object]:
-    """Saved WildNetwork settings without the key itself (``has_api_key`` says if one is saved)."""
+    """Saved Wildlife Network settings without the key (``has_api_key`` says if one is saved)."""
     return saved.public(saved.load(session))
 
 
