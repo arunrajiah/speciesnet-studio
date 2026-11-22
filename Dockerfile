@@ -22,6 +22,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# OpenCV (used by SpeciesNet's detector, when SpeciesNet is added to the image) needs these system libraries.
+RUN apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 && rm -rf /var/lib/apt/lists/*
+
 COPY --from=ghcr.io/astral-sh/uv:0.13.9 /uv /usr/local/bin/uv
 
 # Install Python dependencies from the lockfile into system Python (no virtualenv in Docker)

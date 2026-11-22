@@ -10,7 +10,7 @@ name = "speciesnet-studio-backend"
 version = "0.1.0"
 description = "Backend for SpeciesNet Studio — a self-hostable review UI for wildlife classifier predictions"
 license = { text = "Apache-2.0" }
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.13"
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.0",
