@@ -3,10 +3,11 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.13.9 /uv /usr/local/bin/uv
 
 # Install dependencies from lockfile into system Python (no virtualenv in Docker)
-ENV UV_SYSTEM_PYTHON=1
+# Install into the image's system Python (uv sync otherwise makes /app/.venv, which is not on PATH)
+ENV UV_PROJECT_ENVIRONMENT=/usr/local
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
